@@ -33,38 +33,40 @@ class simplemodels:
 
     def all_simple_models(self):
         print ("training all simple_models, mode: ",self.mode)
-        y_test = None
-        if self.mode == 1:
-            X_train, X_test = self.preprocess.mean_time()
-            y_train, y_test = self.preprocess.get_labels()
-        elif self.mode == 2:
-            X_test, X_train = self.preprocess.mean_time()
-            y_test, y_train = self.preprocess.get_labels()
-        elif self.mode == 3:
-            self.preprocess.is_submission = True
-            X_train, X_test = self.preprocess.mean_time()
-            y_train , _ = self.preprocess.get_labels()
-        else: raise Exception('class simplemodels: not supported mode')
-
-        all_predicts, training_predicts = self.loop_classifiers(X_train, y_train, X_test,y_test)
-
+        print("test accuracy | train accuracy, classifier name")
+        all_predicts = self.loop_classifiers()
         print ("end all_simple_models")
-        return np.array(all_predicts), np.array(training_predicts)
+        return np.array(all_predicts)
 
-    def loop_classifiers(self, X_train, y_train, X_test,y_test):
+    def loop_classifiers(self):
         all_predicts = []
-        training_predicts = []
         for clf, prepros, name in self.classifiers:
+            X_train, y_train, X_test, y_test =self.get_train_test_data(prepros)
             clf.fit(X_train, y_train)
             predict_proba = clf.predict_proba(X_test)
             if y_test is not None: #test accuracy if can
                 predict = clf.predict(X_test)
-                accuracy = accuracy_score(y_test, predict)
-                print(round(accuracy, 3), end=" ")
-                accuracy = accuracy_score(y_train, clf.predict(X_train))
-                print(round(accuracy, 3), end=" ")
+                accuracy_test = accuracy_score(y_test, predict)
+                accuracy_train = accuracy_score(y_train, clf.predict(X_train))
+                print("%.3f | %.3f " % (accuracy_test, accuracy_train), end="")
             print(name)
             #if accuracy > 0.4:  # weak classifiers are distracting
-            training_predicts.append(clf.predict_proba(X_train))
             all_predicts.append(predict_proba)
-        return all_predicts, training_predicts
+        return all_predicts
+
+    def get_train_test_data(self,preprocess):
+        y_test = None
+        if self.mode == 1:
+
+            X_train, X_test = preprocess()
+            y_train, y_test = self.preprocess.get_labels()
+        elif self.mode == 2:
+            X_test, X_train = preprocess()
+            y_test, y_train = self.preprocess.get_labels()
+        elif self.mode == 3:
+            self.preprocess.is_submission = True
+            X_train, X_test = preprocess()
+            y_train, _ = self.preprocess.get_labels()
+        else:
+            raise Exception('class simplemodels: not supported mode: ', self.mode)
+        return X_train, y_train, X_test, y_test
