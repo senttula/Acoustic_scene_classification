@@ -1,15 +1,10 @@
 import preprocessing
 import models
-import test_model
-from help_functions import Optimize_classifier_weigths
 
 # Tuukka Senttula
 # https://github.com/senttula
 
-
 # https://www.kaggle.com/c/acoustic-scene-2018/
-
-
 
 
 def make_submission_file(submission_predictions):
@@ -25,15 +20,8 @@ if __name__ == "__main__":
     preprocess_class = preprocessing.preprocess()
     mdl = models.main_model(preprocess_class)
 
+    submission_predictions = mdl.get_submissions()
 
-    #test_model.test(preprocess_class)
-    #quit()
-
-    #mdl.testausta()
-    #
-
-    submission_predictions = mdl.testausta()
-    #submission_predictions = mdl.get_submissions()
     make_submission_file(submission_predictions)
 
 

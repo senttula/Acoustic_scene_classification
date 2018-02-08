@@ -79,7 +79,7 @@ class preprocess:
         if self.is_submission:
             y_train = self.outputtrain
             y_test = self.outputtest
-            return np.concatenate((y_train, y_test)), None #none submission test labels
+            return np.concatenate((y_train, y_test)), None #none = submission test labels
         else:
             y_train = self.outputtrain
             y_test = self.outputtest
