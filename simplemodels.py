@@ -1,5 +1,4 @@
 from sklearn.metrics import accuracy_score
-from preprocessing import preprocess
 import numpy as np
 
 from sklearn import svm
@@ -16,24 +15,36 @@ class simplemodels:
 
     def init_classifiers(self):
         rstate = 12345
-        mn_time = self.preprocess.mean_time
+        mn_time = [1,0,0,0,0,0,0]
         self.classifiers = [
-            (LinearDiscriminantAnalysis(), mn_time, "LinearDiscriminantAnalysis"),
+
             (svm.SVC(random_state=rstate, kernel="linear", probability=True, C=10), mn_time, "SVM linear"),
             (svm.SVC(random_state=rstate, kernel="rbf", probability=True, C=15, gamma=.029, tol=0.1),mn_time,"SVM rbf"),
             (svm.SVC(kernel="poly", C=1, gamma=0.06, tol=1e-02, probability=True),mn_time, "SVM poly"),
-            (KNeighborsClassifier(n_neighbors=19), mn_time, "KNN"),
+            (LinearDiscriminantAnalysis(), mn_time, "LinearDiscriminantAnalysis"),
+            (KNeighborsClassifier(n_neighbors=19), mn_time, "19 NN"),
             (LogisticRegression(random_state=rstate, C=6,tol=1e-5), mn_time, "LogisticRegression"),
             (RandomForestClassifier(random_state=rstate, n_estimators=180), mn_time,"RandomForest"),
             (ExtraTreesClassifier(random_state=rstate, n_estimators=750), mn_time,"ExtraTrees"),
             (GradientBoostingClassifier(random_state=rstate, n_estimators=120, max_depth=5), mn_time,"GradientBoost"),
-            #obsolete (AdaBoostClassifier(random_state=rstate, ), mn_time, "AdaBoostClassifier"),
+            ##obsolete (AdaBoostClassifier(random_state=rstate, ), mn_time, "AdaBoostClassifier"),
+
+            (svm.SVC(random_state=rstate, kernel="rbf", probability=True), [1,1,0,0,1,1,0], "SVM rbf 1100110"),
+            (svm.SVC(random_state=rstate, kernel="linear", probability=True),[1, 1, 0, 0, 1, 1,0],"SVM linear 1100110"),
+            (svm.SVC(random_state=rstate, kernel="poly", probability=True), [1, 1, 0, 0, 1, 1, 0], "SVM poly 1100110"),
+            (LinearDiscriminantAnalysis(), [1,1,1,1,1,0,0,], "LinearDiscriminantAnalysis 1111100"),
+            (LogisticRegression(random_state=rstate), [1, 1, 0, 0, 0, 0, 0], "LogisticRegression 1100000"),
+            (RandomForestClassifier(random_state=rstate, n_estimators=100), [1,1,0,0,1,0,1,], "RandomForest 1100101"),
+            (GradientBoostingClassifier(random_state=rstate, n_estimators=120, max_depth=5),
+                                        [1, 1, 0, 0, 1, 1, 0], "GradientBoost 1100110")
+
         ]
-        self.classifiers_mask = [True for i in range(len(self.classifiers))]
+        self.classifiers_mask = [1 for i in range(len(self.classifiers))]
             #some classifiers might have 0 weigth, skipping those to save time
-
-
-
+        #self.classifiers_mask = [ 1, 0,  1, 0 , 0, 0, 0, 0,  0, 1, 0,  0,  0, 1,  0 , 1]
+        #self.classifiers_mask = [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1]
+        #self.classifiers_mask = [1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1]
+        #self.classifiers_mask = [1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0]
 
 
     def all_simple_models(self):
@@ -46,9 +57,9 @@ class simplemodels:
     def loop_classifiers(self):
         all_predicts = []
         for i, clf_info in enumerate(self.classifiers):
-            clf, prepros, name = clf_info
+            clf, mask, name = clf_info
             if self.classifiers_mask[i]: #skip useless classifiers
-                X_train, y_train, X_test, y_test = self.get_train_test_data(prepros)
+                X_train, y_train, X_test, y_test = self.get_train_test_data(mask)
                 clf.fit(X_train, y_train)
                 predict_proba = clf.predict_proba(X_test)
                 if y_test is not None:#test accuracy if can
@@ -60,20 +71,20 @@ class simplemodels:
                 #if accuracy > 0.4:  # weak classifiers are distracting
                 all_predicts.append(predict_proba)
             else:
-                print ("skipping: (", name, ")")
+                print ("----- | ----- skipping: (", name, ")")
         return all_predicts
 
-    def get_train_test_data(self,preprocess):
+    def get_train_test_data(self,preprocess_mask):
         y_test = None
         if self.mode == 1:
-            X_train, X_test = preprocess()
+            X_train, X_test = self.preprocess.features_by_frequency(preprocess_mask)
             y_train, y_test = self.preprocess.get_labels()
         elif self.mode == 2:
-            X_test, X_train = preprocess()
+            X_test, X_train = self.preprocess.features_by_frequency(preprocess_mask)
             y_test, y_train = self.preprocess.get_labels()
         elif self.mode == 3:
             self.preprocess.is_submission = True
-            X_train, X_test = preprocess()
+            X_train, X_test = self.preprocess.features_by_frequency(preprocess_mask)
             y_train, _ = self.preprocess.get_labels()
         else:
             raise Exception('class simplemodels: not supported mode: ', self.mode)
