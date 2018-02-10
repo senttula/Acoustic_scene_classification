@@ -6,6 +6,11 @@ import models
 
 # https://www.kaggle.com/c/acoustic-scene-2018/
 
+# TODO differentiate good classifiers for each class
+# TODO more classifiers with different preprocessors
+# TODO neural networks
+# XG boost TODO
+
 
 def make_submission_file(submission_predictions):
     print("making submission...")
@@ -19,6 +24,8 @@ def make_submission_file(submission_predictions):
 if __name__ == "__main__":
     preprocess_class = preprocessing.preprocess()
     mdl = models.main_model(preprocess_class)
+
+    #mdl.test_full()
 
     mdl.train_classifier_weigths()
     submission_predictions = mdl.get_submissions()
