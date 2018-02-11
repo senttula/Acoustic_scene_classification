@@ -3,11 +3,9 @@ from sklearn.preprocessing import LabelEncoder
 from scipy import stats
 from help_functions import reshape_x
 
-
-#TODO binarized data
-
 class preprocess:
     #holds the data and returns with wanted preprocess
+    #TODO when calling the features, calculations are done everytime
     def __init__(self, is_submission=False):
         self.is_submission = is_submission
         self.label_encoder = LabelEncoder()
@@ -65,19 +63,14 @@ class preprocess:
 
 
     def mean_time(self):
-        if self.is_submission:
-            X_train = np.mean(self.inputtrain, axis=2)
-            X_test = np.mean(self.inputtest, axis=2)
-            X_submission = np.mean(self.X_submission, axis=2)
-            return np.concatenate((X_train, X_test)), X_submission
-        else:
-            X_train = np.mean(self.inputtrain, axis=2)
-            X_test  = np.mean(self.inputtest, axis=2)
-            return X_train, X_test
+        #replaced by features_by_frequency
+        return self.features_by_frequency([1,0,0,0,0,0,0])
 
 
     def features_by_frequency(self, mask):
+        # mask takes wanted features from features list
         features = [np.mean, np.std, stats.skew, stats.kurtosis, np.median, np.min, np.max]
+
         X_train = []
         X_test = []
         for i in range(7):
@@ -100,15 +93,24 @@ class preprocess:
         else:
             return X_train, X_test
 
+    def full_image(self):
+        X_train = self.inputtrain
+        X_test = self.inputtest
+
+        if self.is_submission:
+            X_submission = self.X_submission
+            return np.concatenate((X_train, X_test)), X_submission #TODO axis?
+        else:
+            return X_train, X_test
 
     def get_labels(self):
+        y_train = self.outputtrain
+        y_test = self.outputtest
+
         if self.is_submission:
-            y_train = self.outputtrain
-            y_test = self.outputtest
-            return np.concatenate((y_train, y_test)), None #none = submission test labels
+            submission_labels = None #no labels here
+            return np.concatenate((y_train, y_test)), submission_labels
         else:
-            y_train = self.outputtrain
-            y_test = self.outputtest
             return y_train, y_test
 
 

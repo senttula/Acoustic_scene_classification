@@ -39,9 +39,6 @@ class main_model:
         return
 
 
-
-
-
     def get_submissions(self):
         print("###########################################################")
         print("training models to make submission")
@@ -66,7 +63,6 @@ class main_model:
         print("submission shape: ", weigthed_submission.shape)
         return weigthed_submission
 
-
     def train_classifier_weigths(self):
         print ("###########################################################")
         print ("training models to optimize classifier weigths")
@@ -74,8 +70,17 @@ class main_model:
         predicts = self.simplemodels.all_simple_models()
         _, y = self.preprocess_class.get_labels()
 
+
+
+        #TODO add test data into predicts
+
+        #TODO how weigths would come if trained on train+test data
         optimizer = Optimize_classifier_weigths()
         self.classfier_weigths = optimizer.train_theta(predicts, y)
+
+
+
+
         print("weigths: ",np.round(self.classfier_weigths, 3))
 
         obsolete_classifiers_indexes  =np.where(self.classfier_weigths == 0)[0]

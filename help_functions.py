@@ -5,12 +5,12 @@ from time import time
 class Optimize_classifier_weigths:
     def __init__(self):
         self.theta = np.array([1])
-        self.alpha = 0.2 #TODO needs to be lower if more classifiers
+        self.alpha = 0.2
         self.xtest = np.array([1])
         self.ytest = np.array([1])
         self.xshape= np.array([1])
 
-        self.max_iterations = 5000
+        self.max_iterations = 20000
 
         self.OHencoder = OneHotEncoder()
 
@@ -22,11 +22,17 @@ class Optimize_classifier_weigths:
         self.xtest = xtest
         self.ytest = ytest
 
+
+
         self.xshape=x_train.shape
         theta_candidates = []
         reshaped_x = reshape_x(x_train)
-        print("---------gradient descent iterations with different loss functions, ",
-              self.max_iterations, "iterations max----------")
+
+        self.alpha = round(4 / self.xshape[0], 2)  # adjust alpha depending on theta length
+        self.alpha = np.clip(self.alpha, 0.001, 0.3)
+
+        print("---------gradient descent iterations with different loss functions, iterations max: ",
+              self.max_iterations, ", learn rate: ",self.alpha,"----------")
 
         theta_candidates.append(self.gradientDescent_train(reshaped_x, y_train, self.loss_full))
 
@@ -42,6 +48,8 @@ class Optimize_classifier_weigths:
             hypothesis = np.dot(theta_test, reshaped_x)
             score = np.argmax(hypothesis, axis=1)
             acc = np.mean(score == y_train)
+            print (theta_test)
+            print (acc)
             accuracies.append(acc)
 
         best_theta = theta_candidates[np.argmax(np.array(accuracies))]#select best by accuracy
@@ -52,6 +60,7 @@ class Optimize_classifier_weigths:
         y_transformed = self.OHencoder.fit_transform(y.reshape(-1, 1)).toarray()
         previous_cost = 0
         theta = np.random.randn(self.xshape[0])
+
         for i in range(1, self.max_iterations+1):
             hypothesis = np.dot(theta, x)
 
@@ -65,20 +74,25 @@ class Optimize_classifier_weigths:
 
             theta = theta - self.alpha * gradient
 
-            theta = np.clip(theta, 0, None)#negative weigths is overlearning
+            #theta = np.clip(theta, 0, None)#negative weigths is overlearning?
 
             score  =np.argmax(hypothesis, axis=1)
             acc = np.mean(score == y)
             cost = np.sum(np.power(loss, 2)) / (2 * number_of_items)
-            if not i%int(self.max_iterations/10) or i == 10 or i == 100:
+            if not i%int(self.max_iterations/20) or i == 10 or i == 100:
                 theta = theta / max(abs(theta))
-                print("Iteration %4d | Cost: %.8f, accuracy: %.3f"% (i, cost, acc), end="")
+
+                cost_delta = previous_cost - cost
+                #cost_delta = np.log10(cost_delta)
+                print("Iteration %4d | Cost delta: %.2e, accuracy: %.4f" % (i, cost_delta, acc), end="")
+
                 self.test()
                 print()
-                if round(cost, 15) == round(previous_cost, 15):#break if cost did not decrease in a while
+                if round(cost, 14) == round(previous_cost, 14):#break if cost did not decrease in a while
                     print("Cost stagnant, ending iterations")
                     break
-                previous_cost = cost
+            previous_cost = cost
+
         return theta
 
     def loss_full(self, hypothesis, y_transformed, y):
@@ -115,7 +129,7 @@ class Optimize_classifier_weigths:
 
 def reshape_x(x):
     reshaped = []
-    for i in range(x.shape[1]):
+    for i in range(x.shape[1]):#TODO better numpy way for this?
         part = x[:, i, :]
         reshaped.append(part)
     return np.array(reshaped)
@@ -133,6 +147,6 @@ def binary_weigths(x, y):
         acc = np.mean(score == y)
         if acc>best[1]:
             best=(theta.copy(), acc) #theta needs to be copied
-    print("best binary: accuracy: ", round(best[1],4))
+    print("best binary weigthed accuracy: ", round(best[1],4))
     return best[0]
 
