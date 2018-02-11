@@ -68,15 +68,13 @@ class main_model:
         print ("training models to optimize classifier weigths")
         self.simplemodels.mode = 1
         predicts = self.simplemodels.all_simple_models()
-        _, y = self.preprocess_class.get_labels()
-
-
+        y_test, y_train = self.preprocess_class.get_labels()
 
         #TODO add test data into predicts
 
         #TODO how weigths would come if trained on train+test data
         optimizer = Optimize_classifier_weigths()
-        self.classfier_weigths = optimizer.train_theta(predicts, y)
+        self.classfier_weigths = optimizer.train_theta(predicts, y_train)#, x_test, y_test)
 
 
 
