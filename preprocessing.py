@@ -2,72 +2,104 @@ import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from scipy import stats
 from help_functions import reshape_x
+from time import time
+from random import shuffle
 
 
 class preprocess:
     #holds the data and returns with wanted preprocess
     def __init__(self, is_submission=False):
+        #TODO this initializing takes long, find if can be faster
         self.is_submission = is_submission
         self.label_encoder = LabelEncoder()
+        self.features_by_frequency_list = []
+
         self.read_data()
 
-        self.features_by_frequency_list = []
-        self.init_features_by_frequency()
+        self.split_crossvalidation_metatrain()
+        self.change_crossvalidation()
 
-        self.totake = 0
+
+
+        # for semisupervised learning
+        self.threshold = 0.5
+        self.predict_probabilities = None
+
 
 
     def read_data(self):
         try:
-            #TODO better crossvalidation
-            self.inputtrain = np.load("Xtrain.npy", mmap_mode="r")
-            self.outputtrain = np.load("ytrain.npy", mmap_mode="r")
-            self.inputtest = np.load("Xtest.npy", mmap_mode="r")
-            self.outputtest = np.load("ytest.npy", mmap_mode="r")
+            self.x_train_file = np.load("X_train.npy", mmap_mode="r")
+            self.y_train_file = np.loadtxt("y_train.csv", dtype=str, skiprows=1, delimiter=",", usecols=1)
             self.X_submission = np.load("X_test.npy", mmap_mode="r")
-            y_train = np.loadtxt("y_train.csv", dtype=str, skiprows=1, delimiter=",", usecols=1)
-            self.label_encoder.fit(list(set(y_train)))
+            self.label_encoder.fit(list(set(self.y_train_file)))
         except:
-            print ("reading and splitting data")
-            try:
-                crossvalidation_file = open("crossvalidation_train.csv")
-                self.X_submission = np.load("X_test.npy", mmap_mode="r")
-                X_train = np.load("X_train.npy", mmap_mode="r")
-                y_train = np.loadtxt("y_train.csv", dtype=str, skiprows=1, delimiter=",", usecols=1)
-            except:
-                raise Exception("missing files")
-            crossvalidation_rows = []
-            for line in crossvalidation_file:
-                if line.startswith("id"):
-                    continue
-                crossvalidation_rows.append(line.split(",")[2].strip())
+            raise Exception("missing files?")
 
 
-            self.label_encoder.fit(list(set(y_train)))
-            y_train_encoded = self.label_encoder.transform(y_train)
+    def split_crossvalidation_metatrain(self):
+        self.label_encoder.fit(list(set(self.y_train_file)))
+        self.y_train_encoded = self.label_encoder.transform(self.y_train_file)
 
-            x_tr = []
-            y_tr = []
+        nfold = 5
+        meta_train_file = open("meta_train.csv")
+        meta_rows = []
+        for line in meta_train_file:
+            if line.startswith("id"):
+                continue
+            line = line.split(",")
+            line[2] = line[2].strip()
+            meta_rows.append(line)
 
-            x_tst = []
-            y_tst = []
+        all = {}
 
-            for index in np.arange(np.size(X_train, 0)):
-                if crossvalidation_rows[index] == "train":
-                    x_tr.append(X_train[index])
-                    y_tr.append(y_train_encoded[index])
+        for index in range(len(meta_rows)):
+            id = meta_rows[index][1]
+            label = meta_rows[index][2]
+            if label in all:
+                if id in all[label]:
+                    all[label][id].append(index)
                 else:
-                    x_tst.append(X_train[index])
-                    y_tst.append(y_train_encoded[index])
+                    all[label][id] = [index]
+            else:
+                all[label] = {id: [index]}
 
-            np.save("Xtrain.npy",np.array(x_tr))
-            np.save("ytrain.npy",np.array(y_tr))
-            np.save("Xtest.npy", np.array(x_tst))
-            np.save("ytest.npy", np.array(y_tst))
-            self.inputtrain = np.array(x_tr)
-            self.outputtrain = np.array(y_tr)
-            self.inputtest = np.array(x_tst)
-            self.outputtest = np.array(y_tst)
+        self.meta_indexes = [[] for _ in range(nfold)]
+
+        iter = 0
+        for key, value in all.items():
+            for key, value in value.items():
+                for i in value:
+                    self.meta_indexes[iter].append(i)
+                iter += 1
+                if iter >= nfold:
+                    iter = 0
+
+    def change_crossvalidation(self, crossvalidation_fold_number=3):
+
+        test_indexes = self.meta_indexes[crossvalidation_fold_number]
+
+        # this line is trainwreck but takes other indexes that are not on test_indexes
+        train_indexes = [a for i, other_lists in enumerate(self.meta_indexes) if i != crossvalidation_fold_number
+                         for a in other_lists]
+
+        shuffle(test_indexes)
+        shuffle(train_indexes)
+
+        self.inputtrain  = np.array(self.x_train_file[train_indexes])
+        self.outputtrain = np.array(self.y_train_encoded[train_indexes])
+
+        self.inputtest  = np.array(self.x_train_file[test_indexes])
+        self.outputtest = np.array(self.y_train_encoded[test_indexes])
+
+        #print(self.inputtrain .shape)
+        #print(self.outputtrain.shape)
+        #print(self.inputtest  .shape)
+        #print(self.outputtest .shape)
+
+        self.init_features_by_frequency()
+
+
 
     def init_features_by_frequency(self):
         # takes few seconds but saves when when calling data
@@ -117,7 +149,6 @@ class preprocess:
             X_submission = X_submission.reshape((X_submission.shape[0], -1))
             return np.concatenate((X_train, X_test)), X_submission
         else:
-
             return X_train, X_test
 
     def full_image(self):
@@ -137,7 +168,7 @@ class preprocess:
         y_train = self.outputtrain
         y_test = self.outputtest
 
-        #uus = np.zeros_like(y_train) #TODO
+        #uus = np.zeros_like(y_train) #TODO one versus all
         #indexes = np.where(y_train == self.totake)[0]
         #uus[indexes] = 1
         #y_train = uus
@@ -151,3 +182,33 @@ class preprocess:
             return np.concatenate((y_train, y_test)), submission_labels
         else:
             return y_train, y_test
+
+
+
+    def semisupervised_data(self, x, y, x_submission):
+        """
+        detect high probability labels from predict_probabilities
+        add these to train data with the likely label
+        train, predict again, win
+        """
+        #TODO better distinguish on the best one (0.5,0.1,0.1,0.1,0.1) is sure but
+        #TODO (0.5,0.46,0.01,0.01,0.01) is not so sure but with the same threshold
+
+        if self.predict_probabilities is None:
+            raise Exception("no predict probas set")
+
+        y = y.reshape(-1, 1)
+
+        probas = self.predict_probabilities
+
+        new_set = np.where(probas > self.threshold)  # tuple: x indexes, y indexes
+        new_x = x_submission[new_set[0]]
+        new_y = new_set[1].reshape(-1, 1)
+
+        new_train_x_all = np.concatenate((new_x, x))
+        new_train_y_all = np.concatenate((new_y, y))
+
+
+        return new_train_x_all, new_train_y_all.ravel()
+
+

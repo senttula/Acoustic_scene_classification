@@ -73,7 +73,7 @@ class Optimize_classifier_weigths:
 
             theta = theta - self.alpha * gradient
 
-            theta = np.clip(theta, 0, None)#negative weigths is overlearning?
+            #theta = np.clip(theta, 0, None)#negative weigths is overlearning?
 
             score  =np.argmax(hypothesis, axis=1)
             acc = np.mean(score == y)
@@ -82,7 +82,7 @@ class Optimize_classifier_weigths:
             if not i%int(self.max_iterations/20) or i == 10 or i == 100:
                 cost_delta = previous_cost - cost
                 #cost_delta = np.log10(cost_delta)
-                print("Iteration %5d | %.5e,Cost decrease: %.5e, accuracy: %.4f" % (i,cost, cost_delta, acc), end="")
+                print("Iteration %5d | Cost decrease: %.5e, accuracy: %.4f" % (i, cost_delta, acc), end="")
 
                 self.test()
                 print()
@@ -155,6 +155,8 @@ def binary_weigths(x, y):
             best=(theta.copy(), acc) #theta needs to be copied
     print("best binary weigthed accuracy: ", round(best[1],4))
     return best[0]
+
+
 
 
 def test_by_class(predicts, y):

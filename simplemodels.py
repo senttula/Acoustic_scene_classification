@@ -15,9 +15,11 @@ class simplemodels:
     def __init__(self, mode, preprocess_class):
         self.preprocess = preprocess_class
         self.mode = mode
+        self.semisupervised = False
         # mode1 = x_train, x_test
         # mode2 = x_test,  x_train (so just reversed for some testing)
         # mode3 = x_train+x_test, x_submission  (x_train+x_test concentated)
+        # mode4 = x_train+x_test+high_probas_from_submission, x_submission  (semisupervised from submission)
 
         self.init_classifiers()
 
@@ -28,43 +30,43 @@ class simplemodels:
 
             (svm.SVC(random_state=rstate, kernel="linear", probability=True, C=10), mn_time, "SVM linear"),
             (svm.SVC(random_state=rstate, kernel="rbf", probability=True, C=15, gamma=.029, tol=0.1),mn_time,"SVM rbf"),
-            (svm.SVC(kernel="poly", C=1, gamma=0.06, tol=1e-02, probability=True),mn_time, "SVM poly"),
-            (LinearDiscriminantAnalysis(), mn_time, "LinearDiscriminantAnalysis"),
-            (KNeighborsClassifier(n_neighbors=19), mn_time, "19 NN"),
-            (LogisticRegression(random_state=rstate, C=6,tol=1e-5), mn_time, "LogisticRegression"),
-            (RandomForestClassifier(random_state=rstate, n_estimators=180), mn_time,"RandomForest"),
-            (ExtraTreesClassifier(random_state=rstate, n_estimators=750), mn_time,"ExtraTrees"),
-            (GradientBoostingClassifier(random_state=rstate, n_estimators=120, max_depth=5), mn_time,"GradientBoost"),
-            #obsolete (AdaBoostClassifier(random_state=rstate, ), mn_time, "AdaBoostClassifier"),
-
-            (svm.SVC(random_state=rstate, kernel="rbf", probability=True, gamma=.0172),
-                                        [1,1,0,0,1,1,0], "SVM rbf 1100110"),
-            (svm.SVC(random_state=rstate, kernel="linear", probability=True),[1, 1, 0, 0, 1, 1,0],"SVM linear 1100110"),
-            (svm.SVC(random_state=rstate, kernel="poly", probability=True), [1, 1, 0, 0, 1, 1, 0], "SVM poly 1100110"),
-            (LinearDiscriminantAnalysis(), [1,1,1,1,1,0,0,], "LinearDiscriminantAnalysis 1111100"),
-            (KNeighborsClassifier(n_neighbors=3), [1, 1, 0, 0, 0, 0, 0], "3 NN 1100000"),
-            (LogisticRegression(random_state=rstate), [1, 1, 0, 0, 0, 0, 0], "LogisticRegression 1100000"),
-            (RandomForestClassifier(random_state=rstate, n_estimators=180), [1,1,0,0,1,0,1,], "RandomForest 1100101"),
-            (GradientBoostingClassifier(random_state=rstate, n_estimators=120, max_depth=5),
-                                        [1, 1, 0, 0, 1, 1, 0], "GradientBoost 1100110"),
-##
-            (svm.SVC(random_state=rstate, kernel="rbf", probability=True, gamma=0.0172),
-             [1, 1, 0, 0, 1, 1, 1], "SVM rbf 1100110"),
-            (svm.SVC(random_state=rstate, kernel="linear", probability=True), [1, 1, 0, 0, 1, 1, 1],
-             "SVM linear 1100110"),
-            (svm.SVC(random_state=rstate, kernel="poly", probability=True), [1, 1, 0, 0, 1, 1, 1], "SVM poly 1100110"),
-            (LinearDiscriminantAnalysis(), [1, 1, 0, 0, 1, 1, 0, ], "LinearDiscriminantAnalysis 1111100"),
-            (LogisticRegression(random_state=rstate), [1, 1, 0, 0, 1, 0, 0], "LogisticRegression 1100000"),
-            (RandomForestClassifier(random_state=rstate, n_estimators=180), [1, 1, 0, 0, 1, 1, 1, ],
-             "RandomForest 1100101"),
+            #(svm.SVC(kernel="poly", C=1, gamma=0.06, tol=1e-02, probability=True),mn_time, "SVM poly"),
+            #(LinearDiscriminantAnalysis(), mn_time, "LinearDiscriminantAnalysis"),
+            #(KNeighborsClassifier(n_neighbors=19), mn_time, "19 NN"),
+            #(LogisticRegression(random_state=rstate, C=6,tol=1e-5), mn_time, "LogisticRegression"),
+            #(RandomForestClassifier(random_state=rstate, n_estimators=180), mn_time,"RandomForest"),
+            #(ExtraTreesClassifier(random_state=rstate, n_estimators=750), mn_time,"ExtraTrees"),
+            #(GradientBoostingClassifier(random_state=rstate, n_estimators=120, max_depth=5), mn_time,"GradientBoost"),
+            ##obsolete (AdaBoostClassifier(random_state=rstate, ), mn_time, "AdaBoostClassifier"),
+#
+            #(svm.SVC(random_state=rstate, kernel="rbf", probability=True, gamma=.0172),
+            #                            [1,1,0,0,1,1,0], "SVM rbf 1100110"),
+            #(svm.SVC(random_state=rstate, kernel="linear", probability=True),[1, 1, 0, 0, 1, 1,0],"SVM linear 1100110"),
+            #(svm.SVC(random_state=rstate, kernel="poly", probability=True), [1, 1, 0, 0, 1, 1, 0], "SVM poly 1100110"),
+            #(LinearDiscriminantAnalysis(), [1,1,1,1,1,0,0,], "LinearDiscriminantAnalysis 1111100"),
+            #(KNeighborsClassifier(n_neighbors=3), [1, 1, 0, 0, 0, 0, 0], "3 NN 1100000"),
+            #(LogisticRegression(random_state=rstate), [1, 1, 0, 0, 0, 0, 0], "LogisticRegression 1100000"),
+            #(RandomForestClassifier(random_state=rstate, n_estimators=180), [1,1,0,0,1,0,1,], "RandomForest 1100101"),
+            #(GradientBoostingClassifier(random_state=rstate, n_estimators=120, max_depth=5),
+            #                            [1, 1, 0, 0, 1, 1, 0], "GradientBoost 1100110"),
+###
+            #(svm.SVC(random_state=rstate, kernel="rbf", probability=True, gamma=0.0172),
+            # [1, 1, 0, 0, 1, 1, 1], "SVM rbf 1100110"),
+            #(svm.SVC(random_state=rstate, kernel="linear", probability=True), [1, 1, 0, 0, 1, 1, 1],
+            # "SVM linear 1100110"),
+            #(svm.SVC(random_state=rstate, kernel="poly", probability=True), [1, 1, 0, 0, 1, 1, 1], "SVM poly 1100110"),
+            #(LinearDiscriminantAnalysis(), [1, 1, 0, 0, 1, 1, 0, ], "LinearDiscriminantAnalysis 1111100"),
+            #(LogisticRegression(random_state=rstate), [1, 1, 0, 0, 1, 0, 0], "LogisticRegression 1100000"),
+            #(RandomForestClassifier(random_state=rstate, n_estimators=180), [1, 1, 0, 0, 1, 1, 1, ],
+            # "RandomForest 1100101"),
 
         ]
         self.classifiers_mask = [1 for i in range(len(self.classifiers))]
             #some classifiers might have 0 weigth, skipping those to save time
-        #self.classifiers_mask =[1., 0., 0., 1., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 1., 1., 1.,
-        # 0. , 0. , 0.,  1. , 0.] = 76%
-
-
+        #self.classifiers_mask =[1., 1., 0., 1., 0., 0., 1., 1., 0., 1., 0., 0., 0., 0., 0., 1., 1., 1.,
+        # 0. , 0. , 1.,  1. , 0.]
+        #self.classifiers_mask = [1., 0., 0., 1., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 1., 1., 1.,
+        #                         0., 0., 0., 1., 0.]
 
     def all_simple_models(self):
         print ("training all simple_models, mode: ", self.mode)
@@ -86,9 +88,9 @@ class simplemodels:
                     accuracy_test = accuracy_score(y_test, predict)
                     accuracy_train = accuracy_score(y_train, clf.predict(X_train))
                     print("%.3f | %.3f " % (accuracy_test, accuracy_train), end="")
-                    test_by_class(predict, y_test)
+                    # test_by_class(predict, y_test)
                 print(name)
-                #if accuracy > 0.4:  # weak classifiers are distracting
+                # if accuracy < 0.4:  # weak classifiers are distracting
                 all_predicts.append(predict_proba)
             else:
                 print ("----- | ----- skipping: (", name, ")")
@@ -106,6 +108,13 @@ class simplemodels:
             self.preprocess.is_submission = True
             X_train, X_test = self.preprocess.features_by_frequency(preprocess_mask)
             y_train, _ = self.preprocess.get_labels()
+        elif self.mode == 4:
+            self.preprocess.is_submission = True
+            X_train, X_test = self.preprocess.features_by_frequency(preprocess_mask)
+            y_train, _ = self.preprocess.get_labels()
+
         else:
             raise Exception('class simplemodels: not supported mode: ', self.mode)
+        if self.semisupervised:
+            X_train, y_train = self.preprocess.semisupervised_data(X_train, y_train, X_test)
         return X_train, y_train, X_test, y_test
