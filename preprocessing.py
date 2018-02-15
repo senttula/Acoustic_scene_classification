@@ -3,7 +3,6 @@ from sklearn.preprocessing import LabelEncoder
 from scipy import stats
 from help_functions import reshape_x
 
-from time import  time
 
 class preprocess:
     #holds the data and returns with wanted preprocess
@@ -15,9 +14,12 @@ class preprocess:
         self.features_by_frequency_list = []
         self.init_features_by_frequency()
 
+        self.totake = 0
+
 
     def read_data(self):
         try:
+            #TODO better crossvalidation
             self.inputtrain = np.load("Xtrain.npy", mmap_mode="r")
             self.outputtrain = np.load("ytrain.npy", mmap_mode="r")
             self.inputtest = np.load("Xtest.npy", mmap_mode="r")
@@ -27,49 +29,49 @@ class preprocess:
             self.label_encoder.fit(list(set(y_train)))
         except:
             print ("reading and splitting data")
-        try:
-            crossvalidation_file = open("crossvalidation_train.csv")
-            self.X_submission = np.load("X_test.npy", mmap_mode="r")
-            X_train = np.load("X_train.npy", mmap_mode="r")
-            y_train = np.loadtxt("y_train.csv", dtype=str, skiprows=1, delimiter=",", usecols=1)
-        except:
-            raise Exception("missing files")
-        crossvalidation_rows = []
-        for line in crossvalidation_file:
-            if line.startswith("id"):
-                continue
-            crossvalidation_rows.append(line.split(",")[2].strip())
+            try:
+                crossvalidation_file = open("crossvalidation_train.csv")
+                self.X_submission = np.load("X_test.npy", mmap_mode="r")
+                X_train = np.load("X_train.npy", mmap_mode="r")
+                y_train = np.loadtxt("y_train.csv", dtype=str, skiprows=1, delimiter=",", usecols=1)
+            except:
+                raise Exception("missing files")
+            crossvalidation_rows = []
+            for line in crossvalidation_file:
+                if line.startswith("id"):
+                    continue
+                crossvalidation_rows.append(line.split(",")[2].strip())
 
 
-        self.label_encoder.fit(list(set(y_train)))
-        y_train_encoded = self.label_encoder.transform(y_train)
+            self.label_encoder.fit(list(set(y_train)))
+            y_train_encoded = self.label_encoder.transform(y_train)
 
-        x_tr = []
-        y_tr = []
+            x_tr = []
+            y_tr = []
 
-        x_tst = []
-        y_tst = []
+            x_tst = []
+            y_tst = []
 
-        for index in np.arange(np.size(X_train, 0)):
-            if crossvalidation_rows[index] == "train":
-                x_tr.append(X_train[index])
-                y_tr.append(y_train_encoded[index])
-            else:
-                x_tst.append(X_train[index])
-                y_tst.append(y_train_encoded[index])
+            for index in np.arange(np.size(X_train, 0)):
+                if crossvalidation_rows[index] == "train":
+                    x_tr.append(X_train[index])
+                    y_tr.append(y_train_encoded[index])
+                else:
+                    x_tst.append(X_train[index])
+                    y_tst.append(y_train_encoded[index])
 
-        np.save("Xtrain.npy",np.array(x_tr))
-        np.save("ytrain.npy",np.array(y_tr))
-        np.save("Xtest.npy", np.array(x_tst))
-        np.save("ytest.npy", np.array(y_tst))
-        self.inputtrain = np.array(x_tr)
-        self.outputtrain = np.array(y_tr)
-        self.inputtest = np.array(x_tst)
-        self.outputtest = np.array(y_tst)
+            np.save("Xtrain.npy",np.array(x_tr))
+            np.save("ytrain.npy",np.array(y_tr))
+            np.save("Xtest.npy", np.array(x_tst))
+            np.save("ytest.npy", np.array(y_tst))
+            self.inputtrain = np.array(x_tr)
+            self.outputtrain = np.array(y_tr)
+            self.inputtest = np.array(x_tst)
+            self.outputtest = np.array(y_tst)
 
     def init_features_by_frequency(self):
+        # takes few seconds but saves when when calling data
         features = [np.mean, np.std, stats.skew, stats.kurtosis, np.median, np.min, np.max]
-
         X_train = []
         X_test = []
         X_submission = []
@@ -81,16 +83,13 @@ class preprocess:
         self.features_by_frequency_list.append(X_test)
         self.features_by_frequency_list.append(X_submission)
 
-
-
-
     def mean_time(self):
         #replaced by features_by_frequency
         return self.features_by_frequency([1,0,0,0,0,0,0])
 
     def features_by_frequency(self, mask):
         # mask takes wanted features from features list
-        #[np.mean, np.std, stats.skew, stats.kurtosis, np.median, np.min, np.max]
+        # [np.mean, np.std, stats.skew, stats.kurtosis, np.median, np.min, np.max]
 
         X_train_all = self.features_by_frequency_list[0]
         X_test_all = self.features_by_frequency_list[1]
@@ -125,6 +124,9 @@ class preprocess:
         X_train = self.inputtrain
         X_test = self.inputtest
 
+        X_train = X_train[:,:,:,np.newaxis]
+        X_test = X_test[:,:,:, np.newaxis]
+
         if self.is_submission:
             X_submission = self.X_submission
             return np.concatenate((X_train, X_test)), X_submission #TODO axis?
@@ -135,14 +137,17 @@ class preprocess:
         y_train = self.outputtrain
         y_test = self.outputtest
 
+        #uus = np.zeros_like(y_train) #TODO
+        #indexes = np.where(y_train == self.totake)[0]
+        #uus[indexes] = 1
+        #y_train = uus
+        #uus = np.zeros_like(y_test)
+        #indexes = np.where(y_test == self.totake)[0]
+        #uus[indexes] = 1
+        #y_test = uus
+
         if self.is_submission:
             submission_labels = None #no labels here
             return np.concatenate((y_train, y_test)), submission_labels
         else:
             return y_train, y_test
-
-
-
-
-
-

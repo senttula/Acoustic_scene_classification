@@ -1,7 +1,7 @@
 import preprocessing
 import simplemodels
 import numpy as np
-from help_functions import Optimize_classifier_weigths, reshape_x
+from help_functions import Optimize_classifier_weigths, reshape_x, test_by_class
 import neuro_networks
 
 
@@ -14,6 +14,9 @@ class main_model:
 
         self.classfier_weigths = None
 
+
+    def test_neuronets(self):
+        self.networks.all_neuronetwork_models()
 
     def test_full(self):
         print("###########################################################")
@@ -35,6 +38,10 @@ class main_model:
         acc = np.mean(weigthed_predicts == y_test)
 
         print ("test accuracy: ", acc)
+
+        # TODO plot accuracy graph
+
+        # test_by_class(weigthed_predicts, y_test)
 
         return
 
@@ -67,17 +74,14 @@ class main_model:
         print ("###########################################################")
         print ("training models to optimize classifier weigths")
         self.simplemodels.mode = 1
-        predicts = self.simplemodels.all_simple_models()
-        y_test, y_train = self.preprocess_class.get_labels()
+        train_predicts = self.simplemodels.all_simple_models()
+        _, y = self.preprocess_class.get_labels()
 
         #TODO add test data into predicts
 
         #TODO how weigths would come if trained on train+test data
         optimizer = Optimize_classifier_weigths()
-        self.classfier_weigths = optimizer.train_theta(predicts, y_train)#, x_test, y_test)
-
-
-
+        self.classfier_weigths = optimizer.train_theta(train_predicts, y)#, x_test, y_test)
 
         print("weigths: ",np.round(self.classfier_weigths, 3))
 
