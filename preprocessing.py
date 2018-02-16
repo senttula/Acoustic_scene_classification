@@ -16,10 +16,9 @@ class preprocess:
 
         self.read_data()
 
+        self.nfold = 5
         self.split_crossvalidation_metatrain()
         self.change_crossvalidation()
-
-
 
         # for semisupervised learning
         self.threshold = 0.5
@@ -41,7 +40,7 @@ class preprocess:
         self.label_encoder.fit(list(set(self.y_train_file)))
         self.y_train_encoded = self.label_encoder.transform(self.y_train_file)
 
-        nfold = 5
+
         meta_train_file = open("meta_train.csv")
         meta_rows = []
         for line in meta_train_file:
@@ -64,7 +63,7 @@ class preprocess:
             else:
                 all[label] = {id: [index]}
 
-        self.meta_indexes = [[] for _ in range(nfold)]
+        self.meta_indexes = [[] for _ in range(self.nfold)]
 
         iter = 0
         for key, value in all.items():
@@ -72,7 +71,7 @@ class preprocess:
                 for i in value:
                     self.meta_indexes[iter].append(i)
                 iter += 1
-                if iter >= nfold:
+                if iter >= self.nfold:
                     iter = 0
 
     def change_crossvalidation(self, crossvalidation_fold_number=3):
@@ -80,8 +79,8 @@ class preprocess:
         test_indexes = self.meta_indexes[crossvalidation_fold_number]
 
         # this line is trainwreck but takes other indexes that are not on test_indexes
-        train_indexes = [a for i, other_lists in enumerate(self.meta_indexes) if i != crossvalidation_fold_number
-                         for a in other_lists]
+        train_indexes = [a for i, sub_lists in enumerate(self.meta_indexes) if i != crossvalidation_fold_number
+                         for a in sub_lists]
 
         shuffle(test_indexes)
         shuffle(train_indexes)
@@ -102,6 +101,8 @@ class preprocess:
 
 
     def init_features_by_frequency(self):
+        # initilasing this takes few seconds but saves if many classificators are used
+        self.features_by_frequency_list = []
         # takes few seconds but saves when when calling data
         features = [np.mean, np.std, stats.skew, stats.kurtosis, np.median, np.min, np.max]
         X_train = []
@@ -114,6 +115,7 @@ class preprocess:
         self.features_by_frequency_list.append(X_train)
         self.features_by_frequency_list.append(X_test)
         self.features_by_frequency_list.append(X_submission)
+
 
     def mean_time(self):
         #replaced by features_by_frequency
@@ -208,6 +210,7 @@ class preprocess:
         new_train_x_all = np.concatenate((new_x, x))
         new_train_y_all = np.concatenate((new_y, y))
 
+        #print("added data size: ", new_set[1].shape[0])
 
         return new_train_x_all, new_train_y_all.ravel()
 

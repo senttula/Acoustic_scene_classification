@@ -47,11 +47,11 @@ class Optimize_classifier_weigths:
             hypothesis = np.dot(theta_test, reshaped_x)
             score = np.argmax(hypothesis, axis=1)
             acc = np.mean(score == y_train)
-            print (theta_test)
-            print (acc)
             accuracies.append(acc)
 
+
         best_theta = theta_candidates[np.argmax(np.array(accuracies))]#select best by accuracy
+        print ("best accuracy: %.4f , weigths: " %(max(accuracies)), best_theta)
         return best_theta
 
     def gradientDescent_train(self, x, y, loss_function):
@@ -82,7 +82,7 @@ class Optimize_classifier_weigths:
             if not i%int(self.max_iterations/20) or i == 10 or i == 100:
                 cost_delta = previous_cost - cost
                 #cost_delta = np.log10(cost_delta)
-                print("Iteration %5d | Cost decrease: %.5e, accuracy: %.4f" % (i, cost_delta, acc), end="")
+                print("Iteration %5d | Cost decrease: %.3e, accuracy: %.4f" % (i, cost_delta, acc), end="")
 
                 self.test()
                 print()

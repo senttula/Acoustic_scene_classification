@@ -27,46 +27,46 @@ class simplemodels:
         rstate = 123454#12145#123454
         mn_time = [1,0,0,0,0,0,0]
         self.classifiers = [
-
             (svm.SVC(random_state=rstate, kernel="linear", probability=True, C=10), mn_time, "SVM linear"),
             (svm.SVC(random_state=rstate, kernel="rbf", probability=True, C=15, gamma=.029, tol=0.1),mn_time,"SVM rbf"),
-            #(svm.SVC(kernel="poly", C=1, gamma=0.06, tol=1e-02, probability=True),mn_time, "SVM poly"),
-            #(LinearDiscriminantAnalysis(), mn_time, "LinearDiscriminantAnalysis"),
-            #(KNeighborsClassifier(n_neighbors=19), mn_time, "19 NN"),
-            #(LogisticRegression(random_state=rstate, C=6,tol=1e-5), mn_time, "LogisticRegression"),
-            #(RandomForestClassifier(random_state=rstate, n_estimators=180), mn_time,"RandomForest"),
-            #(ExtraTreesClassifier(random_state=rstate, n_estimators=750), mn_time,"ExtraTrees"),
-            #(GradientBoostingClassifier(random_state=rstate, n_estimators=120, max_depth=5), mn_time,"GradientBoost"),
-            ##obsolete (AdaBoostClassifier(random_state=rstate, ), mn_time, "AdaBoostClassifier"),
+            (svm.SVC(kernel="poly", C=1, gamma=0.06, tol=1e-02, probability=True),mn_time, "SVM poly"),
+            (LinearDiscriminantAnalysis(), mn_time, "LinearDiscriminantAnalysis"),
+            (KNeighborsClassifier(n_neighbors=19), mn_time, "19 NN"),
+            (LogisticRegression(random_state=rstate, C=6,tol=1e-5), mn_time, "LogisticRegression"),
+            (RandomForestClassifier(random_state=rstate, n_estimators=180), mn_time,"RandomForest"),
+            (ExtraTreesClassifier(random_state=rstate, n_estimators=750), mn_time,"ExtraTrees"),
+            (GradientBoostingClassifier(random_state=rstate, n_estimators=120, max_depth=5), mn_time,"GradientBoost"),
+            #obsolete (AdaBoostClassifier(random_state=rstate, ), mn_time, "AdaBoostClassifier"),
 #
-            #(svm.SVC(random_state=rstate, kernel="rbf", probability=True, gamma=.0172),
-            #                            [1,1,0,0,1,1,0], "SVM rbf 1100110"),
-            #(svm.SVC(random_state=rstate, kernel="linear", probability=True),[1, 1, 0, 0, 1, 1,0],"SVM linear 1100110"),
+            (svm.SVC(random_state=rstate, kernel="rbf", C=8, probability=True, gamma=.0172),
+                                        [1,1,0,0,1,1,0], "SVM rbf 1100110"),
+            (svm.SVC(random_state=rstate, kernel="linear", probability=True),[1, 1, 0, 0, 1, 0,0],"SVM linear 1100100"),
             #(svm.SVC(random_state=rstate, kernel="poly", probability=True), [1, 1, 0, 0, 1, 1, 0], "SVM poly 1100110"),
-            #(LinearDiscriminantAnalysis(), [1,1,1,1,1,0,0,], "LinearDiscriminantAnalysis 1111100"),
-            #(KNeighborsClassifier(n_neighbors=3), [1, 1, 0, 0, 0, 0, 0], "3 NN 1100000"),
-            #(LogisticRegression(random_state=rstate), [1, 1, 0, 0, 0, 0, 0], "LogisticRegression 1100000"),
-            #(RandomForestClassifier(random_state=rstate, n_estimators=180), [1,1,0,0,1,0,1,], "RandomForest 1100101"),
-            #(GradientBoostingClassifier(random_state=rstate, n_estimators=120, max_depth=5),
-            #                            [1, 1, 0, 0, 1, 1, 0], "GradientBoost 1100110"),
+            (LinearDiscriminantAnalysis(), [1,1,1,1,1,0,0,], "LinearDiscriminantAnalysis 1111100"),
+            (KNeighborsClassifier(n_neighbors=3), [1, 1, 0, 0, 0, 0, 0], "3 NN 1100000"),
+            (LogisticRegression(random_state=rstate), [1, 1, 0, 0, 0, 0, 0], "LogisticRegression 1100000"),
+            (RandomForestClassifier(random_state=rstate, n_estimators=320), [1,1,0,0,1,0,1,], "RandomForest 1100101"),
+            (GradientBoostingClassifier(random_state=rstate, n_estimators=120, max_depth=5),
+                                        [1, 1, 0, 0, 1, 1, 0], "GradientBoost 1100110"),
 ###
-            #(svm.SVC(random_state=rstate, kernel="rbf", probability=True, gamma=0.0172),
-            # [1, 1, 0, 0, 1, 1, 1], "SVM rbf 1100110"),
-            #(svm.SVC(random_state=rstate, kernel="linear", probability=True), [1, 1, 0, 0, 1, 1, 1],
-            # "SVM linear 1100110"),
-            #(svm.SVC(random_state=rstate, kernel="poly", probability=True), [1, 1, 0, 0, 1, 1, 1], "SVM poly 1100110"),
-            #(LinearDiscriminantAnalysis(), [1, 1, 0, 0, 1, 1, 0, ], "LinearDiscriminantAnalysis 1111100"),
-            #(LogisticRegression(random_state=rstate), [1, 1, 0, 0, 1, 0, 0], "LogisticRegression 1100000"),
-            #(RandomForestClassifier(random_state=rstate, n_estimators=180), [1, 1, 0, 0, 1, 1, 1, ],
-            # "RandomForest 1100101"),
+            (svm.SVC(random_state=rstate, kernel="rbf", probability=True, gamma=0.0172),
+             [1, 1, 0, 0, 1, 1, 1], "SVM rbf 1100110"),
+            (svm.SVC(random_state=rstate, kernel="linear", probability=True), [1, 1, 0, 0, 1, 1, 1],
+             "SVM linear 1100110"),
+            (svm.SVC(random_state=rstate, kernel="poly", probability=True), [1, 1, 0, 0, 1, 1, 1], "SVM poly 1100110"),
+            (LinearDiscriminantAnalysis(), [1, 1, 0, 0, 1, 1, 0, ], "LinearDiscriminantAnalysis 1111100"),
+            (LogisticRegression(random_state=rstate), [1, 1, 0, 0, 1, 0, 0], "LogisticRegression 1100000"),
+            (RandomForestClassifier(random_state=rstate, n_estimators=180), [1, 1, 0, 0, 1, 1, 1, ],
+             "RandomForest 1100101"),
 
         ]
+        self.reset_mask()
+
+    def reset_mask(self):
+        print("simple models mask reseted")
         self.classifiers_mask = [1 for i in range(len(self.classifiers))]
-            #some classifiers might have 0 weigth, skipping those to save time
-        #self.classifiers_mask =[1., 1., 0., 1., 0., 0., 1., 1., 0., 1., 0., 0., 0., 0., 0., 1., 1., 1.,
-        # 0. , 0. , 1.,  1. , 0.]
-        #self.classifiers_mask = [1., 0., 0., 1., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 1., 1., 1.,
-        #                         0., 0., 0., 1., 0.]
+        self.classifiers_mask = [1., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0.,
+         0., 0., 0., 1., 0.] #TODO just for test mask
 
     def all_simple_models(self):
         print ("training all simple_models, mode: ", self.mode)
@@ -81,6 +81,7 @@ class simplemodels:
             clf, mask, name = clf_info
             if self.classifiers_mask[i]: #skip useless classifiers
                 X_train, y_train, X_test, y_test = self.get_train_test_data(mask)
+
                 clf.fit(X_train, y_train)
                 predict_proba = clf.predict_proba(X_test)
                 if y_test is not None:#test accuracy if can
