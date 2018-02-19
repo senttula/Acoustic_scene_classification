@@ -34,7 +34,7 @@ class main_model:
         return probas
 
     def test_full(self):
-        thresholds = [0.5]
+        thresholds = [0.5, 0.55, 0.6, 0.65]
         for z in range(0,1):#self.preprocess_class.nfold):
             print("###########################################################", z)
             print("training models to test")
@@ -55,21 +55,36 @@ class main_model:
             acc = np.mean(weigthed_predicts == y_test)
             print("test accuracy: ", acc)
 
+            acl = []
+            acl.append(acc)
             for index in range(len(thresholds)):
-                threshold = thresholds[index]
+                acl.append(0)
                 self.classfier_weigths = weigths_to_test_semisupervised
-                self.preprocess_class.threshold = threshold
+                self.preprocess_class.threshold = thresholds[index]
+
                 probas = self.semisupervised(simple_model_predicts)
-
                 weigthed_predicts = np.argmax(np.dot(self.classfier_weigths, probas), axis=1)
-
                 acc2 = np.mean(weigthed_predicts == y_test)
                 accuracy_change=(acc2-acc)/acc
                 print ("accuracy_change: ", accuracy_change,acc2)
-                self.best_configuration_list.append([round(accuracy_change, 4), threshold,
-                                                     np.round(self.classfier_weigths, 3)])
+                acl.append(acc2)
 
-        for t in self.best_configuration_list:
+                probas = self.semisupervised(probas)
+                weigthed_predicts = np.argmax(np.dot(self.classfier_weigths, probas), axis=1)
+                acc3 = np.mean(weigthed_predicts == y_test)
+                accuracy_change = (acc3 - acc2) / acc2
+                print("accuracy_change: ", accuracy_change, acc3)
+                acl.append(acc3)
+#
+                #probas = self.semisupervised(probas)
+                #weigthed_predicts = np.argmax(np.dot(self.classfier_weigths, probas), axis=1)
+                #acc4 = np.mean(weigthed_predicts == y_test)
+                #accuracy_change = (acc4 - acc3) / acc3
+                #print("accuracy_change: ", accuracy_change, acc4)
+                #acl.append(acc4)
+
+
+        for t in acl:
             print(t)
 
     def get_submissions(self):

@@ -42,7 +42,7 @@ if __name__ == "__main__":
     mdl = models.main_model(preprocess_class)
 
 
-    mdl.train_classifier_weigths()
+    #mdl.train_classifier_weigths()
 
     mdl.test_full()
 

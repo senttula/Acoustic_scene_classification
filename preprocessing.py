@@ -20,8 +20,9 @@ class preprocess:
         self.change_crossvalidation()
 
         # for semisupervised learning
-        self.threshold = 0.5
-        self.semisvdata = None
+        self.threshold = 0.6
+        self.confidence_threshold = 0.25
+        self.semisvdata = None  # tuple: x indexes, y indexes
 
 
     def read_data(self):
@@ -195,7 +196,28 @@ class preprocess:
         return new_train_x_all, new_train_y_all.ravel()
 
     def init_semisupervised(self, probas):
-        self.semisvdata = np.where(probas > self.threshold)  # tuple: x indexes, y indexes
+        new_set = np.where(probas > self.threshold)
+        if self.confidence_threshold == 0 or self.threshold+self.confidence_threshold>1:
+            self.semisvdata = new_set
+
+        index_high_threshold = new_set[0]
+        labels_high_threshold = new_set[1]
+
+        new_set = np.where(probas[index_high_threshold] > self.confidence_threshold)
+
+        index_all_low_threshold = new_set[0]
+
+        uniques, counts_low_threshold = np.unique(index_all_low_threshold, return_counts=True)
+
+        non_multiples = np.where(counts_low_threshold == 1)
+
+        confident_low_threshold_indexes = uniques[non_multiples]
+
+        new_indexes = index_high_threshold[confident_low_threshold_indexes]
+        new_labels = labels_high_threshold[confident_low_threshold_indexes]
+
+        self.semisvdata = (new_indexes,new_labels)
+        print("added: ", self.semisvdata[0].shape)
 
 
     def reset_semisupervised(self):

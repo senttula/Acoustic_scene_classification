@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 import preprocessing
 
 from keras.models import Sequential
-from keras.layers.core import Dense, Flatten
+from keras.layers.core import Dense, Flatten, Dropout
 from keras.layers import Conv2D, MaxPooling2D, concatenate, add
 from keras.layers import Input, Embedding, LSTM, Dense
 from keras.models import Model
@@ -60,16 +60,16 @@ class neuronetwork_models:
 
 
         inputTensor_1 = Input((40, 501, 1))
-        layer_1 = Conv2D(10, (7, 5), activation='relu',padding='same')(inputTensor_1)
-        layer_1 = MaxPooling2D(pool_size=(4, 12))(layer_1)
-        layer_1 = Conv2D(8, (7, 5), activation='relu',padding='same')(layer_1)
-        layer_1 = MaxPooling2D(pool_size=(5, 10))(layer_1)
+        layer_1 = Conv2D(32, (3, 3), activation='relu',padding='same')(inputTensor_1)
+        layer_1 = MaxPooling2D(pool_size=(3, 9))(layer_1)
+        layer_1 = Conv2D(32, (3, 3), activation='relu',padding='same')(layer_1)
+        layer_1 = MaxPooling2D(pool_size=(3, 9))(layer_1)
         layer_1 = Flatten()(layer_1)
         layer_1 = Dense(15, activation='sigmoid')(layer_1)
 
 
         inputTensor_2 = Input((160,))
-        layer_2 = Dense(200, activation='relu')(inputTensor_2)
+        layer_2 = Dropout(0.7)(inputTensor_2)
         layer_2 = Dense(50, activation='relu')(layer_2)
 
         layer_2 = Dense(15, activation='sigmoid')(layer_2)
@@ -78,6 +78,7 @@ class neuronetwork_models:
 
         main_output = add([layer_1, layer_2])
 
+        #main_output = Dense(15, activation='relu')(x)
         #x = Dense(64, activation='relu')(x)
 
         #main_output = Dense(15, activation='softmax', name='main_output')(x)

@@ -155,8 +155,6 @@ def binary_weigths(x, y):
     return best[0]
 
 
-
-
 def test_by_class(predicts, y):
     print ("testing predicts by class...")
     number_of_classes = 15
