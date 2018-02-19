@@ -1,16 +1,18 @@
 import numpy as np
 from sklearn.preprocessing import OneHotEncoder
 from time import time
+import matplotlib.pyplot as plt
 
 class Optimize_classifier_weigths:
     def __init__(self):
         self.theta = np.array([1])
-        self.alpha = 0.2
+        self.alpha = 0.1
         self.xtest = np.array([1])
         self.ytest = np.array([1])
-        self.xshape= np.array([1])
 
-        self.max_iterations = 20000
+        self.max_iterations = 2000
+
+        self.c = 0 # TODO regularisation
 
         self.OHencoder = OneHotEncoder()
 
@@ -22,29 +24,22 @@ class Optimize_classifier_weigths:
         self.xtest = xtest
         self.ytest = ytest
 
-        self.xshape=x_train.shape
         theta_candidates = []
-        reshaped_x = reshape_x(x_train)
-
-        self.alpha = round(4 / self.xshape[0], 2)  # adjust alpha depending on theta length, could be better
-        self.alpha = np.clip(self.alpha, 0.0001, 0.3)
-        self.alpha =0.1
 
         print("---------gradient descent iterations with different loss functions, iterations max: ",
               self.max_iterations, ", learn rate: ",self.alpha,"----------")
 
-        theta_candidates.append(self.gradientDescent_train(reshaped_x, y_train, self.loss_full))
+        self.c = 0
+        theta_candidates.append(self.gradientDescent_train(x_train, y_train, self.loss_full))
+        #self.c = .1
+        #theta_candidates.append(self.gradientDescent_train(x_train, y_train, self.loss_full))
 
-        # these loss functions are worse and slow
-        #theta_candidates.append(self.gradientDescent_train(reshaped_x, y_train, self.loss_only_best))
-        #theta_candidates.append(self.gradientDescent_train(reshaped_x, y_train, self.loss_two_best))
-
-        theta_candidates.append(binary_weigths(reshaped_x, y_train))
+        theta_candidates.append(binary_weigths(x_train, y_train))
 
         accuracies = []
         for theta_test in theta_candidates:
-            # test all theta candidates again as backup
-            hypothesis = np.dot(theta_test, reshaped_x)
+            # test all theta candidates, to choose
+            hypothesis = np.dot(theta_test, x_train)
             score = np.argmax(hypothesis, axis=1)
             acc = np.mean(score == y_train)
             accuracies.append(acc)
@@ -58,7 +53,7 @@ class Optimize_classifier_weigths:
         number_of_items = x.shape[0]
         y_transformed = self.OHencoder.fit_transform(y.reshape(-1, 1)).toarray()
         previous_cost = 0
-        theta = np.random.randn(self.xshape[0])
+        theta = np.ones(x.shape[1])
 
         for i in range(1, self.max_iterations+1):
             hypothesis = np.dot(theta, x)
@@ -69,30 +64,44 @@ class Optimize_classifier_weigths:
             for t in range(x.shape[0]): #TODO find if any numpy way to do this
                 loss_for_item = np.dot(x[t], loss[t])
                 sum = np.add(sum, loss_for_item)
+
+            gradient = sum / number_of_items
+            gradient_with_penalty = gradient - self.c * theta
+            theta = theta - self.alpha * gradient_with_penalty
+
             gradient = sum / number_of_items
 
             theta = theta - self.alpha * gradient
 
+            #theta = theta / max(abs(theta))
+
             #theta = np.clip(theta, 0, None)#negative weigths is overlearning?
 
-            score  =np.argmax(hypothesis, axis=1)
-            acc = np.mean(score == y)
             cost = np.sum(np.power(loss, 2)) / (2 * number_of_items)
 
-            if not i%int(self.max_iterations/20) or i == 10 or i == 100:
+            if not i%int(self.max_iterations/10) or i == 10 or i == 100:
+
+                score = np.argmax(hypothesis, axis=1)
+                acc = np.mean(score == y)
+
                 cost_delta = previous_cost - cost
                 #cost_delta = np.log10(cost_delta)
-                print("Iteration %5d | Cost decrease: %.3e, accuracy: %.4f" % (i, cost_delta, acc), end="")
-
+                print("Iteration %5d | Cost decrease: %.3e, accuracy: %.4f " % (i, cost_delta, acc), end="")
                 self.test()
                 print()
-                if round(cost, 14) == round(previous_cost, 14)or max(abs(theta))=='nan':#break if cost did not decrease in a while
+
+                print(theta)
+                print(-gradient)
+                print (gradient_with_penalty-gradient)
+
+                if cost_delta < 1e-16:#break if cost did not decrease in a while
                     print("Cost stagnant, ending iterations")
                     break
 
             previous_cost = cost
 
         theta = theta / max(abs(theta))
+
         return theta
 
     def loss_full(self, hypothesis, y_transformed, y):
@@ -126,18 +135,7 @@ class Optimize_classifier_weigths:
             acc = np.mean(predicts == self.ytest)
             print(", test accurcy: %.3f" % (acc), end="")
 
-
-def reshape_x(x):
-    return np.transpose(x,(1,0,2))
-    #reshaped = []
-    #for i in range(x.shape[1]):#TODO better numpy way for this?
-    #    part = x[:, i, :]
-    #    reshaped.append(part)
-    #return np.array(reshaped)
-
 def binary_weigths(x, y):
-    #return [ 1.,  0. , 1.,  1.,  0. , 0. , 0.,  0. , 0. , 1. , 0. , 0. , 0.,  0.,  0.,  1.,  1.,  1.,
-    #0. , 0. , 0.,  1. , 1.]
     #TODO are all important? if classifiers>15 gets real slow
     print("testing with 0/1 weigths (binary).. ")
     theta = np.zeros(x.shape[1])
@@ -163,7 +161,6 @@ def test_by_class(predicts, y):
     print ("testing predicts by class...")
     number_of_classes = 15
     info = {i:[0,0,0] for i in range (number_of_classes)}
-    #insides: (classnumber, (correct_predictions, false_positives, missed_positives))
     for index in range(predicts.shape[0]):
         predict = predicts[index]
         correct = y[index]
@@ -201,28 +198,6 @@ def test_by_class(predicts, y):
             #print(round((info[index][0] + info[index][2]) / (info[index][0]+info[index][1] + info[index][2]), 3), end=" ")
             #print(round(info[index][0] / (info[index][0] + info[index][2]), 3), end=" ")
         except:pass
-    print()
-
-
-"""
-0  SVM rbf 1100110
-1  SVM rbf 1100110
-2  RandomForest
-3  SVM poly 1100110
-4  LogisticRegression
-5  SVM poly 1100110
-6  LogisticRegression 1100000
-7  SVM rbf 1100110
-8  LinearDiscriminantAnalysis 1111100
-9  LinearDiscriminantAnalysis
-10 GradientBoost 1100110
-11 SVM rbf 1100110
-12 SVM rbf 1100110
-13 SVM rbf
-14 LinearDiscriminantAnalysis 1111100
-"""
-
-
 
 
 

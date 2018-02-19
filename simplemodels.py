@@ -12,10 +12,10 @@ from time import  time
 
 
 class simplemodels:
-    def __init__(self, mode, preprocess_class):
+    def __init__(self, preprocess_class):
         self.preprocess = preprocess_class
-        self.mode = mode
-        self.semisupervised = False
+
+        self.is_submission = False
         # mode1 = x_train, x_test
         # mode2 = x_test,  x_train (so just reversed for some testing)
         # mode3 = x_train+x_test, x_submission  (x_train+x_test concentated)
@@ -65,15 +65,18 @@ class simplemodels:
     def reset_mask(self):
         print("simple models mask reseted")
         self.classifiers_mask = [1 for i in range(len(self.classifiers))]
-        self.classifiers_mask = [1., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0.,
+        self.classifiers_mask = [1., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.,
          0., 0., 0., 1., 0.] #TODO just for test mask
+        self.classifiers_mask = [0., 0., 0., 1., 1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                                 0., 0., 0., 0., 0.]  # TODO just for test mask
 
     def all_simple_models(self):
-        print ("training all simple_models, mode: ", self.mode)
+        print ("training all simple_models")
         print("test accuracy | train accuracy, classifier name")
         all_predicts = self.loop_classifiers()
         print("end all_simple_models")
-        return np.array(all_predicts)
+        all_predicts = np.transpose(np.array(all_predicts), (1,0,2))
+        return all_predicts
 
     def loop_classifiers(self):
         all_predicts = []
@@ -99,23 +102,15 @@ class simplemodels:
 
     def get_train_test_data(self,preprocess_mask):
         y_test = None
-        if self.mode == 1:
+        if self.is_submission:
+            self.preprocess.is_submission = True
+            X_train, X_test = self.preprocess.features_by_frequency(preprocess_mask)
+            y_train, _ = self.preprocess.get_labels()
+        else:
             X_train, X_test = self.preprocess.features_by_frequency(preprocess_mask)
             y_train, y_test = self.preprocess.get_labels()
-        elif self.mode == 2:
-            X_test, X_train = self.preprocess.features_by_frequency(preprocess_mask)
-            y_test, y_train = self.preprocess.get_labels()
-        elif self.mode == 3:
-            self.preprocess.is_submission = True
-            X_train, X_test = self.preprocess.features_by_frequency(preprocess_mask)
-            y_train, _ = self.preprocess.get_labels()
-        elif self.mode == 4:
-            self.preprocess.is_submission = True
-            X_train, X_test = self.preprocess.features_by_frequency(preprocess_mask)
-            y_train, _ = self.preprocess.get_labels()
 
-        else:
-            raise Exception('class simplemodels: not supported mode: ', self.mode)
-        if self.semisupervised:
-            X_train, y_train = self.preprocess.semisupervised_data(X_train, y_train, X_test)
+        # semisv doesn't change unless initialised
+        X_train, y_train = self.preprocess.semisupervised_data(X_train, y_train, X_test)
+
         return X_train, y_train, X_test, y_test

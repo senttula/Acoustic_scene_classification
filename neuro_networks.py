@@ -1,6 +1,7 @@
 import numpy as np
 from matplotlib.image import imread
 from sklearn.model_selection import train_test_split
+import preprocessing
 
 from keras.models import Sequential
 from keras.layers.core import Dense, Flatten
@@ -17,6 +18,8 @@ import os
 class neuronetwork_models:
     def __init__(self, preprocess_class):
         self.preprocess_class = preprocess_class
+        self.train = True
+
         self.classifiers = """
         NORMAL 7
         convolution (2?)
@@ -266,6 +269,9 @@ class neuronetwork_models:
 """
 
 
+pr = preprocessing.preprocess()
+nn = neuronetwork_models(pr)
+nn.all_neuronetwork_models()
 
 
 

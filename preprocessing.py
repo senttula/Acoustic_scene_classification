@@ -1,7 +1,6 @@
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from scipy import stats
-from help_functions import reshape_x
 from time import time
 from random import shuffle
 
@@ -22,8 +21,7 @@ class preprocess:
 
         # for semisupervised learning
         self.threshold = 0.5
-        self.predict_probabilities = None
-
+        self.semisvdata = None
 
 
     def read_data(self):
@@ -137,8 +135,8 @@ class preprocess:
                 X_train.append(X_train_all[i])
                 X_test.append(X_test_all[i])
 
-        X_train = reshape_x(np.array(X_train))
-        X_test = reshape_x(np.array(X_test))
+        X_train = np.transpose(X_train, (1, 0, 2))
+        X_test = np.transpose(X_test, (1, 0, 2))
         X_train = X_train.reshape((X_train.shape[0], -1))
         X_test = X_test.reshape((X_test.shape[0], -1))
 
@@ -147,7 +145,7 @@ class preprocess:
             for i in range(7):
                 if mask[i]:
                     X_submission.append(X_submission_all[i])
-            X_submission = reshape_x(np.array(X_submission))
+            X_submission = np.transpose(X_submission, (1, 0, 2))
             X_submission = X_submission.reshape((X_submission.shape[0], -1))
             return np.concatenate((X_train, X_test)), X_submission
         else:
@@ -170,15 +168,6 @@ class preprocess:
         y_train = self.outputtrain
         y_test = self.outputtest
 
-        #uus = np.zeros_like(y_train) #TODO one versus all
-        #indexes = np.where(y_train == self.totake)[0]
-        #uus[indexes] = 1
-        #y_train = uus
-        #uus = np.zeros_like(y_test)
-        #indexes = np.where(y_test == self.totake)[0]
-        #uus[indexes] = 1
-        #y_test = uus
-
         if self.is_submission:
             submission_labels = None #no labels here
             return np.concatenate((y_train, y_test)), submission_labels
@@ -188,30 +177,26 @@ class preprocess:
 
 
     def semisupervised_data(self, x, y, x_submission):
-        """
-        detect high probability labels from predict_probabilities
-        add these to train data with the likely label
-        train, predict again, win
-        """
+
         #TODO better distinguish on the best one (0.5,0.1,0.1,0.1,0.1) is sure but
         #TODO (0.5,0.46,0.01,0.01,0.01) is not so sure but with the same threshold
 
-        if self.predict_probabilities is None:
-            raise Exception("no predict probas set")
+        if self.semisvdata is None:
+            return x, y
 
         y = y.reshape(-1, 1)
 
-        probas = self.predict_probabilities
+        new_x = x_submission[self.semisvdata[0]]
+        new_y = self.semisvdata[1].reshape(-1, 1)
 
-        new_set = np.where(probas > self.threshold)  # tuple: x indexes, y indexes
-        new_x = x_submission[new_set[0]]
-        new_y = new_set[1].reshape(-1, 1)
-
-        new_train_x_all = np.concatenate((new_x, x))
-        new_train_y_all = np.concatenate((new_y, y))
-
-        #print("added data size: ", new_set[1].shape[0])
+        new_train_x_all = np.concatenate((x,new_x))
+        new_train_y_all = np.concatenate((y,new_y))
 
         return new_train_x_all, new_train_y_all.ravel()
 
+    def init_semisupervised(self, probas):
+        self.semisvdata = np.where(probas > self.threshold)  # tuple: x indexes, y indexes
 
+
+    def reset_semisupervised(self):
+        self.semisvdata = None

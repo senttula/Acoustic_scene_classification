@@ -42,20 +42,13 @@ if __name__ == "__main__":
     mdl = models.main_model(preprocess_class)
 
 
-    #mdl.train_classifier_weigths()
-    #TODO some regularisation on weigths
+    mdl.train_classifier_weigths()
+
     mdl.test_full()
+
 
     #submission_predictions = mdl.get_submissions()
     #make_submission_file(submission_predictions)
-
-    #mdl.test_full()
-    #mdl.test_neuronets()
-
-
-
-
-    #
 
 
 
