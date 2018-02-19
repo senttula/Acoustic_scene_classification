@@ -29,12 +29,11 @@ class Optimize_classifier_weigths:
         print("---------gradient descent iterations with different loss functions, iterations max: ",
               self.max_iterations, ", learn rate: ",self.alpha,"----------")
 
-        self.c = 0
-        theta_candidates.append(self.gradientDescent_train(x_train, y_train, self.loss_full))
-        #self.c = .1
+        theta_candidates.append(forward_recursive_selection(x_train, y_train))
+        theta_candidates.append(backward_recursive_selection(x_train, y_train))
+        #print(theta_candidates)
         #theta_candidates.append(self.gradientDescent_train(x_train, y_train, self.loss_full))
-
-        theta_candidates.append(binary_weigths(x_train, y_train))
+        # theta_candidates.append(binary_weigths(x_train, y_train))
 
         accuracies = []
         for theta_test in theta_candidates:
@@ -73,7 +72,7 @@ class Optimize_classifier_weigths:
 
             theta = theta - self.alpha * gradient
 
-            #theta = theta / max(abs(theta))
+            theta = theta / max(abs(theta))
 
             #theta = np.clip(theta, 0, None)#negative weigths is overlearning?
 
@@ -90,11 +89,11 @@ class Optimize_classifier_weigths:
                 self.test()
                 print()
 
-                print(theta)
-                print(-gradient)
-                print (gradient_with_penalty-gradient)
+                # print(theta)
+                # print(gradient / max(abs(gradient)))
+                # print ((self.c * theta) / max(abs(self.c * theta)))
 
-                if cost_delta < 1e-16:#break if cost did not decrease in a while
+                if abs(cost_delta) < 1e-16:#break if cost did not decrease in a while
                     print("Cost stagnant, ending iterations")
                     break
 
@@ -136,6 +135,7 @@ class Optimize_classifier_weigths:
             print(", test accurcy: %.3f" % (acc), end="")
 
 def binary_weigths(x, y):
+    # replaced by recursive selection, too slow
     #TODO are all important? if classifiers>15 gets real slow
     print("testing with 0/1 weigths (binary).. ")
     theta = np.zeros(x.shape[1])
@@ -153,6 +153,65 @@ def binary_weigths(x, y):
             best=(theta.copy(), acc) #theta needs to be copied
     print("best binary weigthed accuracy: ", round(best[1],4))
     return best[0]
+
+def forward_recursive_selection(x, y):
+    # appends the best until lower accuracy
+    best_indexes = []
+    best_accuracy = 0
+    indexes_to_check = list(range(x.shape[1]))
+    for n in range(x.shape[1]):
+        accuracies = []
+        for i in indexes_to_check:
+            theta = np.zeros(x.shape[1])
+            theta[best_indexes] = 1
+            theta[i] = 1
+            hypothesis = np.dot(theta, x)
+            score = np.argmax(hypothesis, axis=1)
+            acc = np.mean(score == y)
+            accuracies.append(acc)
+
+        if max(accuracies) < best_accuracy or n==x.shape[1]-1:
+            theta = np.zeros(x.shape[1])
+            theta[best_indexes] = 1
+            return theta
+        best = indexes_to_check[np.argmax(accuracies)]
+        best_accuracy = max(accuracies)
+        best_indexes.append(best)
+        indexes_to_check.remove(best)
+
+    theta = np.zeros(x.shape[1])
+    theta[best_indexes] = 1
+    return theta
+
+def backward_recursive_selection(x, y):
+    # appends the best until lower accuracy
+    best_indexes = []
+    best_accuracy = 0
+    indexes_to_check = list(range(x.shape[1]))
+    for n in range(x.shape[1]):
+        accuracies = []
+        for i in indexes_to_check:
+            theta = np.ones(x.shape[1])
+            theta[best_indexes] = 0
+            theta[i] = 0
+            hypothesis = np.dot(theta, x)
+            score = np.argmax(hypothesis, axis=1)
+            acc = np.mean(score == y)
+            accuracies.append(acc)
+        if max(accuracies) < best_accuracy or n==x.shape[1]-1:
+            theta = np.ones(x.shape[1])
+            theta[best_indexes] = 0
+            return theta
+        best = indexes_to_check[np.argmax(accuracies)]
+        best_accuracy = max(accuracies)
+        best_indexes.append(best)
+        indexes_to_check.remove(best)
+
+    theta = np.ones(x.shape[1])
+    theta[best_indexes] = 0
+    return theta
+
+
 
 
 def test_by_class(predicts, y):
