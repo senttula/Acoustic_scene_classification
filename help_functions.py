@@ -6,13 +6,13 @@ import matplotlib.pyplot as plt
 class Optimize_classifier_weigths:
     def __init__(self):
         self.theta = np.array([1])
-        self.alpha = 0.1
+        self.alpha = 0.03
         self.xtest = np.array([1])
         self.ytest = np.array([1])
 
-        self.max_iterations = 2000
+        self.max_iterations = 20000
 
-        self.c = 0 # TODO regularisation
+        self.c = 0 # TODO make regularisation work somehow, currently is never the best option
 
         self.OHencoder = OneHotEncoder()
 
@@ -26,13 +26,15 @@ class Optimize_classifier_weigths:
 
         theta_candidates = []
 
-        print("---------gradient descent iterations with different loss functions, iterations max: ",
+        print("---------Testing for best weigth combination, iterations max: ",
               self.max_iterations, ", learn rate: ",self.alpha,"----------")
 
+        # recursives work fast and well enough
         theta_candidates.append(forward_recursive_selection(x_train, y_train))
         theta_candidates.append(backward_recursive_selection(x_train, y_train))
-        #print(theta_candidates)
-        #theta_candidates.append(self.gradientDescent_train(x_train, y_train, self.loss_full))
+        theta_candidates.append(self.gradientDescent_train(x_train, y_train, self.loss_full))
+        self.c = 0.3
+        theta_candidates.append(self.gradientDescent_train(x_train, y_train, self.loss_full))
         # theta_candidates.append(binary_weigths(x_train, y_train))
 
         accuracies = []
@@ -42,7 +44,7 @@ class Optimize_classifier_weigths:
             score = np.argmax(hypothesis, axis=1)
             acc = np.mean(score == y_train)
             accuracies.append(acc)
-
+            print("theta, accuracy: ", theta_test, round(acc, 3))
 
         best_theta = theta_candidates[np.argmax(np.array(accuracies))]#select best by accuracy
         print ("best accuracy: %.4f , weigths: " %(max(accuracies)), best_theta)
@@ -65,14 +67,13 @@ class Optimize_classifier_weigths:
                 sum = np.add(sum, loss_for_item)
 
             gradient = sum / number_of_items
-            gradient_with_penalty = gradient - self.c * theta
+            gradient_with_penalty = gradient + self.c * theta
             theta = theta - self.alpha * gradient_with_penalty
 
-            gradient = sum / number_of_items
+            #gradient = sum / number_of_items
+            #theta = theta - self.alpha * gradient
 
-            theta = theta - self.alpha * gradient
-
-            theta = theta / max(abs(theta))
+            #theta = theta / max(abs(theta))
 
             #theta = np.clip(theta, 0, None)#negative weigths is overlearning?
 
@@ -85,9 +86,9 @@ class Optimize_classifier_weigths:
 
                 cost_delta = previous_cost - cost
                 #cost_delta = np.log10(cost_delta)
-                print("Iteration %5d | Cost decrease: %.3e, accuracy: %.4f " % (i, cost_delta, acc), end="")
+                print("Iteration %5d | Cost decrease:%.5e %.3e, accuracy: %.4f " % (i, cost, cost_delta, acc), end="")
                 self.test()
-                print()
+                print(theta)
 
                 # print(theta)
                 # print(gradient / max(abs(gradient)))
@@ -184,7 +185,7 @@ def forward_recursive_selection(x, y):
     return theta
 
 def backward_recursive_selection(x, y):
-    # appends the best until lower accuracy
+    # deletes the worst until lower accuracy
     best_indexes = []
     best_accuracy = 0
     indexes_to_check = list(range(x.shape[1]))
@@ -255,9 +256,3 @@ def test_by_class(predicts, y):
             #print(round((info[index][0] + info[index][2]) / (info[index][0]+info[index][1] + info[index][2]), 3), end=" ")
             #print(round(info[index][0] / (info[index][0] + info[index][2]), 3), end=" ")
         except:pass
-
-
-
-
-
-

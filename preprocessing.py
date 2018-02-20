@@ -15,13 +15,14 @@ class preprocess:
 
         self.read_data()
 
-        self.nfold = 5
-        self.split_crossvalidation_metatrain()
+        # crossvalidation
+        self.nfold=5
+        self.split_crossvalidation_metatrain(self.nfold)
         self.change_crossvalidation()
 
-        # for semisupervised learning
-        self.threshold = 0.6
-        self.confidence_threshold = 0.25
+        # semisupervised learning
+        self.threshold = 0.5
+        self.confidence_threshold = 0.3
         self.semisvdata = None  # tuple: x indexes, y indexes
 
 
@@ -35,10 +36,9 @@ class preprocess:
             raise Exception("missing files?")
 
 
-    def split_crossvalidation_metatrain(self):
+    def split_crossvalidation_metatrain(self, nfold):
         self.label_encoder.fit(list(set(self.y_train_file)))
         self.y_train_encoded = self.label_encoder.transform(self.y_train_file)
-
 
         meta_train_file = open("meta_train.csv")
         meta_rows = []
@@ -62,7 +62,7 @@ class preprocess:
             else:
                 all[label] = {id: [index]}
 
-        self.meta_indexes = [[] for _ in range(self.nfold)]
+        self.meta_indexes = [[] for _ in range(nfold)]
 
         iter = 0
         for key, value in all.items():
@@ -70,8 +70,9 @@ class preprocess:
                 for i in value:
                     self.meta_indexes[iter].append(i)
                 iter += 1
-                if iter >= self.nfold:
+                if iter >= nfold:
                     iter = 0
+        self.nfold=nfold
 
     def change_crossvalidation(self, crossvalidation_fold_number=3):
 
@@ -161,6 +162,7 @@ class preprocess:
 
         if self.is_submission:
             X_submission = self.X_submission
+            X_submission = X_submission[:, :, :, np.newaxis]
             return np.concatenate((X_train, X_test)), X_submission #TODO axis?
         else:
             return X_train, X_test
@@ -196,6 +198,12 @@ class preprocess:
         return new_train_x_all, new_train_y_all.ravel()
 
     def init_semisupervised(self, probas):
+        """
+        adds best predicts to train data
+        adds if probability > threshold and no other probability is over confidence_threshold
+
+        might not be fastest solution but this initialising isn't called often
+        """
         new_set = np.where(probas > self.threshold)
         if self.confidence_threshold == 0 or self.threshold+self.confidence_threshold>1:
             self.semisvdata = new_set
@@ -217,7 +225,7 @@ class preprocess:
         new_labels = labels_high_threshold[confident_low_threshold_indexes]
 
         self.semisvdata = (new_indexes,new_labels)
-        print("added: ", self.semisvdata[0].shape)
+        print("%.2f%% of test data added as semisupervised"% (len(new_indexes)/len(probas)))
 
 
     def reset_semisupervised(self):

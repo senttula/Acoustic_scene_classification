@@ -41,7 +41,7 @@ class simplemodels:
             (svm.SVC(random_state=rstate, kernel="rbf", C=8, probability=True, gamma=.0172),
                                         [1,1,0,0,1,1,0], "SVM rbf 1100110"),
             (svm.SVC(random_state=rstate, kernel="linear", probability=True),[1, 1, 0, 0, 1, 0,0],"SVM linear 1100100"),
-            #(svm.SVC(random_state=rstate, kernel="poly", probability=True), [1, 1, 0, 0, 1, 1, 0], "SVM poly 1100110"),
+            (svm.SVC(random_state=rstate, kernel="poly", probability=True), [1, 1, 0, 0, 1, 1, 0], "SVM poly 1100110"),
             (LinearDiscriminantAnalysis(), [1,1,1,1,1,0,0,], "LinearDiscriminantAnalysis 1111100"),
             (KNeighborsClassifier(n_neighbors=3), [1, 1, 0, 0, 0, 0, 0], "3 NN 1100000"),
             (LogisticRegression(random_state=rstate), [1, 1, 0, 0, 0, 0, 0], "LogisticRegression 1100000"),
@@ -65,10 +65,14 @@ class simplemodels:
     def reset_mask(self):
         print("simple models mask reseted")
         self.classifiers_mask = [1 for i in range(len(self.classifiers))]
-        self.classifiers_mask = [1., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.,
-         0., 0., 0., 1., 0.] #TODO just for test mask
-        self.classifiers_mask = [0., 0., 0., 1., 1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                                 0., 0., 0., 0., 0.]  # TODO just for test mask
+        #self.classifiers_mask = [1., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.,
+        # 0., 0., 0., 1., 0.] #TODO just for test mask
+        #self.classifiers_mask = [ 1. , 0. , 0. , 0. , 0.,  0.,  0.,  0.,  0. , 1. , 0. , 0. , 1.  ,1.  ,
+        # 1.,  1. , 1. , 1., 0. , 1., 1.,  0. , 1.]  # TODO just for test mask
+        #self.classifiers_mask = [1., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 1., 0.,
+        #                         1., 1., 0., 1., 0., 1., 1., 0., 0.]
+        self.classifiers_mask = [1., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0.,
+                                 0., 1., 0., 0., 0., 1., 1., 0., 0.]
 
     def all_simple_models(self):
         print ("training all simple_models")

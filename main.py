@@ -10,7 +10,6 @@ import models
 # TODO more classifiers with different preprocessors
 # TODO neural networks
 # XG boost TODO
-# todo SEMI SUPERVISED
 
 """
 configuration:
@@ -29,7 +28,7 @@ train weigthts/semisupervised iterations?
 
 
 def make_submission_file(submission_predictions):
-    print("making submission...")
+    print("making submission...", submission_predictions.shape)
     prediction_labels = list(preprocess_class.label_encoder.inverse_transform(submission_predictions))
     with open("submission.csv", "w") as fp:
         fp.write("Id,Scene_label\n")
@@ -44,11 +43,11 @@ if __name__ == "__main__":
 
     #mdl.train_classifier_weigths()
 
-    mdl.test_full()
+    #mdl.test_full()
 
 
-    #submission_predictions = mdl.get_submissions()
-    #make_submission_file(submission_predictions)
+    submission_predictions = mdl.get_submissions()
+    make_submission_file(submission_predictions)
 
 
 

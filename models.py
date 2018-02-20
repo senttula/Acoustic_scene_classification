@@ -2,7 +2,7 @@ import preprocessing
 import simplemodels
 import numpy as np
 from help_functions import Optimize_classifier_weigths, test_by_class
-#import neuro_networks
+import neuro_networks
 
 
 class main_model:
@@ -10,32 +10,36 @@ class main_model:
         self.preprocess_class = preprocess_class
 
         self.simplemodels = simplemodels.simplemodels(preprocess_class)
-        #self.networks = neuro_networks.neuronetwork_models(preprocess_class)
+        self.networks = neuro_networks.neuronetwork_models(preprocess_class)
 
         self.classfier_weigths = None
 
         self.best_configuration_list = [] #mask, threshold, accuracy_change
 
 
-    #def test_neuronets(self):
-    #    self.networks.all_neuronetwork_models()
-
     def get_predict_probas(self, is_submission = False, crossvalidation_fold = -1):
+        # returns probas: shape = (??00, 9, 15)
+
         if is_submission:
             self.simplemodels.is_submission = True
-        elif crossvalidation_fold != -1: #if submission, crossvalidation doesn't matter
-            self.preprocess_class.change_crossvalidation(crossvalidation_fold)
+            self.networks.is_submission = True
+        else:
+            self.simplemodels.is_submission = False
+            self.networks.is_submission = False
+            if crossvalidation_fold != -1: # crossvalidation_fold matters only if not submission
+                self.preprocess_class.change_crossvalidation(crossvalidation_fold)
 
         all_simple_probas = self.simplemodels.all_simple_models()
-        # TODO same for neuromodels
-        # probas = np.concentate((s, n), axis = 1)
 
-        probas = all_simple_probas
+        all_neuro_probas = self.networks.all_neuronets()
+
+        probas = np.concatenate((all_simple_probas, all_neuro_probas), axis = 1)
+
         return probas
 
     def test_full(self):
-        thresholds = [0.5, 0.55, 0.6, 0.65]
-        for z in range(0,1):#self.preprocess_class.nfold):
+        self.preprocess_class.split_crossvalidation_metatrain(10)
+        for z in range(0,self.preprocess_class.nfold):
             print("###########################################################", z)
             print("training models to test")
 
@@ -48,67 +52,46 @@ class main_model:
 
             print("weigths: ", np.round(self.classfier_weigths, 3))
 
-            weigths_to_test_semisupervised = np.copy(self.classfier_weigths)
-
             weigthed_predicts = np.argmax(np.dot(self.classfier_weigths, simple_model_predicts), axis=1)
-
             acc = np.mean(weigthed_predicts == y_test)
             print("test accuracy: ", acc)
 
-            acl = []
-            acl.append(acc)
-            for index in range(len(thresholds)):
-                acl.append(0)
-                self.classfier_weigths = weigths_to_test_semisupervised
-                self.preprocess_class.threshold = thresholds[index]
+            #prev_acc = acc
+            #probas = simple_model_predicts
+            #for _ in range(2):
+            #    self.preprocess_class.threshold= 0.5
+            #    self.preprocess_class.confidence_threshold = 0.3
+            #    probas = self.semisupervised(probas)
+            #    weigthed_predicts = np.argmax(np.dot(self.classfier_weigths,probas), axis=1)
+            #    new_acc = np.mean(weigthed_predicts == y_test)
+            #    accuracy_change=(new_acc-prev_acc)/prev_acc
+            #    print ("accuracy_change: ", accuracy_change,new_acc)
+            #    accuracies.append(new_acc)
+            #    prev_acc  = new_acc
+            #accuracies.append(0)
 
-                probas = self.semisupervised(simple_model_predicts)
-                weigthed_predicts = np.argmax(np.dot(self.classfier_weigths, probas), axis=1)
-                acc2 = np.mean(weigthed_predicts == y_test)
-                accuracy_change=(acc2-acc)/acc
-                print ("accuracy_change: ", accuracy_change,acc2)
-                acl.append(acc2)
-
-                probas = self.semisupervised(probas)
-                weigthed_predicts = np.argmax(np.dot(self.classfier_weigths, probas), axis=1)
-                acc3 = np.mean(weigthed_predicts == y_test)
-                accuracy_change = (acc3 - acc2) / acc2
-                print("accuracy_change: ", accuracy_change, acc3)
-                acl.append(acc3)
-#
-                #probas = self.semisupervised(probas)
-                #weigthed_predicts = np.argmax(np.dot(self.classfier_weigths, probas), axis=1)
-                #acc4 = np.mean(weigthed_predicts == y_test)
-                #accuracy_change = (acc4 - acc3) / acc3
-                #print("accuracy_change: ", accuracy_change, acc4)
-                #acl.append(acc4)
-
-
-        for t in acl:
-            print(t)
 
     def get_submissions(self):
-        self.preprocess_class.threshold = 0.6
         print("###########################################################")
         print("training models to make submission")
 
-        simple_model_predicts = self.get_predict_probas(is_submission=True)
-        if self.classfier_weigths is None:
-            self.classfier_weigths  = np.ones(simple_model_predicts.shape[1])
+        weigthed_probas= self.get_predict_probas(is_submission=True)
 
+        if self.classfier_weigths is None:
+            self.classfier_weigths = np.ones(weigthed_probas.shape[1])
+
+        self.classfier_weigths[-1] = 3 #
         print("nonzero weigths: ", np.round(self.classfier_weigths, 3))
 
-        print (simple_model_predicts.shape)
-        weigthed_submission = self.semisupervised(simple_model_predicts)
-        print(weigthed_submission.shape)
-        weigthed_submission = self.semisupervised(weigthed_submission)
+        for _ in range(2):# few loops of semisupervision
+            weigthed_probas = self.semisupervised(weigthed_probas)
 
-        weigthed_submission = np.argmax(np.dot(self.classfier_weigths, weigthed_submission), axis=1)
-        #print("submission shape: ", weigthed_submission.shape)
+        weigthed_submission = np.argmax(np.dot(self.classfier_weigths, weigthed_probas), axis=1)
+
         return weigthed_submission
 
     def semisupervised(self, probas):
-        # TODO try with different thresholds
+        # inputs probas, outputs probas
         print("###########################################################", self.preprocess_class.threshold)
         print("training again with semisupervised data")
         weigthed_predicts = np.dot(self.classfier_weigths, probas)
@@ -121,22 +104,44 @@ class main_model:
         return new_probas
 
     def train_classifier_weigths(self):
-        for z in range(0,1):#self.preprocess_class.nfold):
+        weigth_candidates = []
+        self.preprocess_class.split_crossvalidation_metatrain(10)
+
+        for z in range(0,self.preprocess_class.nfold):
             print("###########################################################")
             print("training models to optimize classifier weigths")
-            self.preprocess_class.change_crossvalidation(z)
-            train_predicts = self.get_predict_probas()
+            train_predicts = self.get_predict_probas(crossvalidation_fold=z)
             _, y = self.preprocess_class.get_labels()
 
             #TODO add test data into predicts?
 
             optimizer = Optimize_classifier_weigths()
-            self.classfier_weigths = optimizer.train_theta(train_predicts, y)#, x_test, y_test)
-            print("weigths: ",np.round(self.classfier_weigths, 3))
+            classfier_weigths = optimizer.train_theta(train_predicts, y)#, x_test, y_test)
             print()
-        #TODO show all weigths and then the choosed ones with explanation why
+            weigth_candidates.append(classfier_weigths)
+        for w in weigth_candidates:
+            print(w)
+
+        weigth_candidates = np.array(weigth_candidates)
+
+        weigth_occurances = weigth_candidates.mean(axis=0)
+
+        index_of_high_occurances = np.where(weigth_occurances > 0.45)
+
+        combined = np.zeros_like(weigth_occurances)
+
+        combined[index_of_high_occurances] = 1
+
+        self.classfier_weigths = combined
+
+        print("weigths: ", np.round(self.classfier_weigths, 3))
+        self.update_mask()
+        print()
+        print()
+
 
     def update_mask(self):
+        # TODO rework needed after networks appended
         obsolete_classifiers_indexes = np.where(self.classfier_weigths == 0)[0]
         index_obsolete = 0
         for index in range(len(self.simplemodels.classifiers_mask)):
