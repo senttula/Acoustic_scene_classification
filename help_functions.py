@@ -32,10 +32,10 @@ class Optimize_classifier_weigths:
         # recursives work fast and well enough
         theta_candidates.append(forward_recursive_selection(x_train, y_train))
         theta_candidates.append(backward_recursive_selection(x_train, y_train))
-        theta_candidates.append(self.gradientDescent_train(x_train, y_train, self.loss_full))
-        self.c = 0.3
-        theta_candidates.append(self.gradientDescent_train(x_train, y_train, self.loss_full))
-        # theta_candidates.append(binary_weigths(x_train, y_train))
+        #theta_candidates.append(self.gradientDescent_train(x_train, y_train, self.loss_full))
+        #self.c = 0.3
+        #theta_candidates.append(self.gradientDescent_train(x_train, y_train, self.loss_full))
+        theta_candidates.append(binary_weigths(x_train, y_train))
 
         accuracies = []
         for theta_test in theta_candidates:

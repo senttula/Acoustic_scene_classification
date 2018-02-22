@@ -6,10 +6,7 @@ import models
 
 # https://www.kaggle.com/c/acoustic-scene-2018/
 
-# TODO differentiate good classifiers for each class
-# TODO more classifiers with different preprocessors
-# TODO neural networks
-# XG boost TODO
+# TODO neuronetwork ROC, what threshold is confident
 
 """
 configuration:

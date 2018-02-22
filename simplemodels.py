@@ -7,6 +7,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, AdaBoostClassifier, GradientBoostingClassifier
 
+
 from help_functions import test_by_class
 from time import  time
 
@@ -24,7 +25,7 @@ class simplemodels:
         self.init_classifiers()
 
     def init_classifiers(self):
-        rstate = 123454#12145#123454
+        rstate = 152
         mn_time = [1,0,0,0,0,0,0]
         self.classifiers = [
             (svm.SVC(random_state=rstate, kernel="linear", probability=True, C=10), mn_time, "SVM linear"),
@@ -42,7 +43,7 @@ class simplemodels:
                                         [1,1,0,0,1,1,0], "SVM rbf 1100110"),
             (svm.SVC(random_state=rstate, kernel="linear", probability=True),[1, 1, 0, 0, 1, 0,0],"SVM linear 1100100"),
             (svm.SVC(random_state=rstate, kernel="poly", probability=True), [1, 1, 0, 0, 1, 1, 0], "SVM poly 1100110"),
-            (LinearDiscriminantAnalysis(), [1,1,1,1,1,0,0,], "LinearDiscriminantAnalysis 1111100"),
+            (LinearDiscriminantAnalysis(), [1,1,0,0,1,0,0,], "LinearDiscriminantAnalysis 1111100"),
             (KNeighborsClassifier(n_neighbors=3), [1, 1, 0, 0, 0, 0, 0], "3 NN 1100000"),
             (LogisticRegression(random_state=rstate), [1, 1, 0, 0, 0, 0, 0], "LogisticRegression 1100000"),
             (RandomForestClassifier(random_state=rstate, n_estimators=320), [1,1,0,0,1,0,1,], "RandomForest 1100101"),
@@ -50,14 +51,14 @@ class simplemodels:
                                         [1, 1, 0, 0, 1, 1, 0], "GradientBoost 1100110"),
 ###
             (svm.SVC(random_state=rstate, kernel="rbf", probability=True, gamma=0.0172),
-             [1, 1, 0, 0, 1, 1, 1], "SVM rbf 1100110"),
-            (svm.SVC(random_state=rstate, kernel="linear", probability=True), [1, 1, 0, 0, 1, 1, 1],
+             [1, 1, 0, 0, 1, 1, 0], "SVM rbf 1100110"),
+            (svm.SVC(random_state=rstate, kernel="linear", probability=True), [1, 1, 0, 0, 1, 1, 0],
              "SVM linear 1100110"),
-            (svm.SVC(random_state=rstate, kernel="poly", probability=True), [1, 1, 0, 0, 1, 1, 1], "SVM poly 1100110"),
-            (LinearDiscriminantAnalysis(), [1, 1, 0, 0, 1, 1, 0, ], "LinearDiscriminantAnalysis 1111100"),
-            (LogisticRegression(random_state=rstate), [1, 1, 0, 0, 1, 0, 0], "LogisticRegression 1100000"),
+            (svm.SVC(random_state=rstate, kernel="poly", probability=True), [1, 1, 0, 0, 1, 1, 0], "SVM poly 1100110"),
+            (LinearDiscriminantAnalysis(), [1, 1, 1, 1, 1, 0, 0, ], "LinearDiscriminantAnalysis 1111100"),
+            (LogisticRegression(random_state=rstate), [1, 1, 0, 0, 0, 0, 0], "LogisticRegression 1100000"),
             (RandomForestClassifier(random_state=rstate, n_estimators=180), [1, 1, 0, 0, 1, 1, 1, ],
-             "RandomForest 1100101"),
+             "RandomForest 1100111"),
 
         ]
         self.reset_mask()
@@ -65,14 +66,11 @@ class simplemodels:
     def reset_mask(self):
         print("simple models mask reseted")
         self.classifiers_mask = [1 for i in range(len(self.classifiers))]
-        #self.classifiers_mask = [1., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.,
-        # 0., 0., 0., 1., 0.] #TODO just for test mask
-        #self.classifiers_mask = [ 1. , 0. , 0. , 0. , 0.,  0.,  0.,  0.,  0. , 1. , 0. , 0. , 1.  ,1.  ,
-        # 1.,  1. , 1. , 1., 0. , 1., 1.,  0. , 1.]  # TODO just for test mask
-        #self.classifiers_mask = [1., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 1., 0.,
-        #                         1., 1., 0., 1., 0., 1., 1., 0., 0.]
-        self.classifiers_mask = [1., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0.,
-                                 0., 1., 0., 0., 0., 1., 1., 0., 0.]
+        self.classifiers_mask = [0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 1., 1., 1., 1.,
+                                 1., 1., 1., 1., 1., 1., 1., 1., 1.] #TODO testing mask
+        self.classifiers_mask = [0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                                 1., 1., 0., 1., 0.,1., 0., 0.,
+                                 0., 0., 0., 0., 0., 1.]  # TODO testing mask
 
     def all_simple_models(self):
         print ("training all simple_models")

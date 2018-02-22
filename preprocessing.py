@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from scipy import stats
 from time import time
-from random import shuffle
+from random import Random
 
 
 class preprocess:
@@ -15,6 +15,8 @@ class preprocess:
 
         self.read_data()
 
+
+
         # crossvalidation
         self.nfold=5
         self.split_crossvalidation_metatrain(self.nfold)
@@ -22,7 +24,7 @@ class preprocess:
 
         # semisupervised learning
         self.threshold = 0.5
-        self.confidence_threshold = 0.3
+        self.confidence_threshold = 0.1
         self.semisvdata = None  # tuple: x indexes, y indexes
 
 
@@ -82,8 +84,8 @@ class preprocess:
         train_indexes = [a for i, sub_lists in enumerate(self.meta_indexes) if i != crossvalidation_fold_number
                          for a in sub_lists]
 
-        shuffle(test_indexes)
-        shuffle(train_indexes)
+        # shuffle(test_indexes)
+        # shuffle(train_indexes)
 
         self.inputtrain  = np.array(self.x_train_file[train_indexes])
         self.outputtrain = np.array(self.y_train_encoded[train_indexes])
@@ -163,7 +165,7 @@ class preprocess:
         if self.is_submission:
             X_submission = self.X_submission
             X_submission = X_submission[:, :, :, np.newaxis]
-            return np.concatenate((X_train, X_test)), X_submission #TODO axis?
+            return np.concatenate((X_train, X_test)), X_submission
         else:
             return X_train, X_test
 
@@ -180,10 +182,6 @@ class preprocess:
 
 
     def semisupervised_data(self, x, y, x_submission):
-
-        #TODO better distinguish on the best one (0.5,0.1,0.1,0.1,0.1) is sure but
-        #TODO (0.5,0.46,0.01,0.01,0.01) is not so sure but with the same threshold
-
         if self.semisvdata is None:
             return x, y
 
@@ -204,6 +202,8 @@ class preprocess:
 
         might not be fastest solution but this initialising isn't called often
         """
+
+        #TODO differentiate what were added on previous semisupervised round
         new_set = np.where(probas > self.threshold)
         if self.confidence_threshold == 0 or self.threshold+self.confidence_threshold>1:
             self.semisvdata = new_set
@@ -225,7 +225,7 @@ class preprocess:
         new_labels = labels_high_threshold[confident_low_threshold_indexes]
 
         self.semisvdata = (new_indexes,new_labels)
-        print("%.2f%% of test data added as semisupervised"% (len(new_indexes)/len(probas)))
+        print("%.2f%% of test data added as semisupervised"% (100*len(new_indexes)/len(probas)))
 
 
     def reset_semisupervised(self):

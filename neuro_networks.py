@@ -14,15 +14,14 @@ from keras.models import Model
 from keras.utils import to_categorical
 from keras import regularizers
 from sklearn import svm
-
-
+import os.path
 
 import os
 
 class neuronetwork_models:
     def __init__(self, preprocess_class):
         self.preprocess_class = preprocess_class
-        self.train = True
+        self.train_sets = 0 #how many times train
         self.is_submission = False
 
         self.classifiers = """
@@ -40,6 +39,8 @@ class neuronetwork_models:
         return all_predicts
 
 
+    def external_probas(self):
+        return # looppaaa ja palauttaa
 
     def loop_neuronets(self):
         model_name = "convtestmodel32.h5"
@@ -72,10 +73,16 @@ class neuronetwork_models:
                       optimizer='sgd',
                       metrics=['accuracy'])
 
-        model.load_weights(model_name)
+        print("model name: ", model_name, end=" ")
 
-        if self.train:
-            sets = 6
+        if os.path.isfile(model_name):
+            model.load_weights(model_name)
+            print("model loaded")
+        else:
+            print("model weigths not found, starting from scratch")
+
+        if self.train_sets>0:
+            sets = self.train_sets
             print("training model",sets,"epochs")
             for n in range(sets):
                 model.fit(x_train, y_train, epochs=10, batch_size=64, verbose=0)
@@ -92,7 +99,7 @@ class neuronetwork_models:
                 print()
 
 
-                model.save("convtestmodel.h5")
+                model.save(model_name)
 
         predict_proba = model.predict(x_test)
 
