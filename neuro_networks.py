@@ -21,15 +21,9 @@ import os
 class neuronetwork_models:
     def __init__(self, preprocess_class):
         self.preprocess_class = preprocess_class
-        self.train_sets = 0 #how many times train
+        self.train_sets = 1 #how many times train
         self.is_submission = False
 
-        self.classifiers = """
-        NORMAL 7
-        convolution (2?)
-        recurrent
-        conv+recurrent
-        """
 
     def all_neuronets(self):
         print("neuro models")

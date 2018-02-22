@@ -2,20 +2,24 @@ import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from scipy import stats
 from time import time
-from random import Random
+from random import shuffle
 
 
 class preprocess:
-    #holds the data and returns with wanted preprocess
-    def __init__(self, is_submission=False):
+    #holds the data and returns with wanted preprocess, holds other conifguration also
+    # TODO split to several other files
+    def __init__(self, verbose_level=2, is_submission=False):
+
+
+
         #TODO this initializing takes long, find if can be faster
         self.is_submission = is_submission
         self.label_encoder = LabelEncoder()
         self.features_by_frequency_list = []
 
-        self.read_data()
+        self.verbose = verbose_level
 
-
+        self.read_files()
 
         # crossvalidation
         self.nfold=5
@@ -24,19 +28,22 @@ class preprocess:
 
         # semisupervised learning
         self.threshold = 0.5
-        self.confidence_threshold = 0.1
+        self.confidence_threshold = 0.25
+        self.overwrite_previous_predicts = False
         self.semisvdata = None  # tuple: x indexes, y indexes
+        self.previous_semisvdata = None
 
 
-    def read_data(self):
-        try:
-            self.x_train_file = np.load("X_train.npy", mmap_mode="r")
-            self.y_train_file = np.loadtxt("y_train.csv", dtype=str, skiprows=1, delimiter=",", usecols=1)
-            self.X_submission = np.load("X_test.npy", mmap_mode="r")
-            self.label_encoder.fit(list(set(self.y_train_file)))
-        except:
-            raise Exception("missing files?")
 
+    def read_files(self):
+        self.x_train_file = np.load("X_train.npy", mmap_mode="r")
+        self.y_train_file = np.loadtxt("y_train.csv", dtype=str, skiprows=1, delimiter=",", usecols=1)
+        self.X_submission = np.load("X_test.npy", mmap_mode="r")
+        self.label_encoder.fit(list(set(self.y_train_file)))
+
+    def pr(self, string, verbose_level):
+        if verbose_level <= self.verbose:
+            print(string)
 
     def split_crossvalidation_metatrain(self, nfold):
         self.label_encoder.fit(list(set(self.y_train_file)))
@@ -143,7 +150,7 @@ class preprocess:
         X_test = np.transpose(X_test, (1, 0, 2))
         X_train = X_train.reshape((X_train.shape[0], -1))
         X_test = X_test.reshape((X_test.shape[0], -1))
-
+        X_submission = None
         if self.is_submission:
             X_submission = []
             for i in range(7):
@@ -151,9 +158,8 @@ class preprocess:
                     X_submission.append(X_submission_all[i])
             X_submission = np.transpose(X_submission, (1, 0, 2))
             X_submission = X_submission.reshape((X_submission.shape[0], -1))
-            return np.concatenate((X_train, X_test)), X_submission
-        else:
-            return X_train, X_test
+
+        return self.do_data(X_train, X_test, X_submission)
 
     def full_image(self):
         X_train = self.inputtrain
@@ -161,34 +167,37 @@ class preprocess:
 
         X_train = X_train[:,:,:,np.newaxis]
         X_test = X_test[:,:,:, np.newaxis]
-
+        X_submission = None
         if self.is_submission:
             X_submission = self.X_submission
             X_submission = X_submission[:, :, :, np.newaxis]
-            return np.concatenate((X_train, X_test)), X_submission
-        else:
-            return X_train, X_test
+
+        return self.do_data(X_train, X_test, X_submission)
 
     def get_labels(self):
         y_train = self.outputtrain
         y_test = self.outputtest
+        submission_labels = None# no labels here
+        return self.do_data(y_train, y_test, submission_labels)
 
+    def do_data(self, train, test, submission=None): #TODO rename
         if self.is_submission:
-            submission_labels = None #no labels here
-            return np.concatenate((y_train, y_test)), submission_labels
-        else:
-            return y_train, y_test
+            train, test = np.concatenate((train, test)), submission
+        return train, test
 
 
+    def semisupervised_data(self, x, y, x_submission, inlcude_previous=False):
 
-    def semisupervised_data(self, x, y, x_submission):
-        if self.semisvdata is None:
+        semisvdata = self.semisvdata
+        if inlcude_previous:
+            semisvdata = self.previous_semisvdata
+        if semisvdata is None:
             return x, y
 
         y = y.reshape(-1, 1)
 
-        new_x = x_submission[self.semisvdata[0]]
-        new_y = self.semisvdata[1].reshape(-1, 1)
+        new_x = x_submission[semisvdata[0]]
+        new_y = semisvdata[1].reshape(-1, 1)
 
         new_train_x_all = np.concatenate((x,new_x))
         new_train_y_all = np.concatenate((y,new_y))
@@ -202,7 +211,6 @@ class preprocess:
 
         might not be fastest solution but this initialising isn't called often
         """
-
         #TODO differentiate what were added on previous semisupervised round
         new_set = np.where(probas > self.threshold)
         if self.confidence_threshold == 0 or self.threshold+self.confidence_threshold>1:
@@ -221,6 +229,8 @@ class preprocess:
 
         confident_low_threshold_indexes = uniques[non_multiples]
 
+
+
         new_indexes = index_high_threshold[confident_low_threshold_indexes]
         new_labels = labels_high_threshold[confident_low_threshold_indexes]
 
@@ -229,4 +239,8 @@ class preprocess:
 
 
     def reset_semisupervised(self):
+        if not self.overwrite_previous_predicts:
+            self.previous_semisvdata = self.semisvdata
         self.semisvdata = None
+
+

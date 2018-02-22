@@ -34,13 +34,13 @@ def make_submission_file(submission_predictions):
     print("submission saved: submission.csv")
 
 if __name__ == "__main__":
-    preprocess_class = preprocessing.preprocess()
+    preprocess_class = preprocessing.preprocess(verbose_level=2)
     mdl = models.main_model(preprocess_class)
 
 
     #mdl.train_classifier_weigths()
 
-    #mdl.test_full()
+    # mdl.test_full()
 
 
     submission_predictions = mdl.get_submissions()

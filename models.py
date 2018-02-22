@@ -1,7 +1,7 @@
 import simplemodels
 import numpy as np
 from help_functions import Optimize_classifier_weigths, test_by_class
-import neuro_networks
+
 import matplotlib.pyplot as plt
 
 # naming (1500 items, 9 classifiers, 15 classes)
@@ -16,11 +16,16 @@ class main_model:
         self.preprocess_class = preprocess_class
 
         self.simplemodels = simplemodels.simplemodels(preprocess_class)
-        self.networks = neuro_networks.neuronetwork_models(preprocess_class)
+
 
         self.classfier_weigths = None
 
-        self.neuronets_bool = False
+        self.neuronets_bool = True
+
+        if self.neuronets_bool: # avoid importing keras if needed
+            import neuro_networks
+            self.networks = neuro_networks.neuronetwork_models(preprocess_class)
+
 
 
     def get_predict_probas(self, is_submission = False, crossvalidation_fold = -1):
@@ -28,16 +33,19 @@ class main_model:
 
         if is_submission:
             self.simplemodels.is_submission = True
-            self.networks.is_submission = True
+
         else:
             self.simplemodels.is_submission = False
-            self.networks.is_submission = False
             if crossvalidation_fold != -1: # crossvalidation_fold matters only if not submission
                 self.preprocess_class.change_crossvalidation(crossvalidation_fold)
 
         all_simple_probas = self.simplemodels.all_simple_models()
 
         if self.neuronets_bool:
+            if is_submission:
+                self.networks.is_submission = True
+            else:
+                self.networks.is_submission = False
             all_neuro_probas = self.networks.all_neuronets()
             probas = np.concatenate((all_simple_probas, all_neuro_probas), axis=1)
             return probas
@@ -49,58 +57,57 @@ class main_model:
 
     def test_full(self):
         accuracies = []
-        accuracies_with_averaged_seisupervised = []
         self.preprocess_class.split_crossvalidation_metatrain(5)
-        for z in range(0,self.preprocess_class.nfold-3):
-            nfold_accuracies = []
+        for z in range(0,self.preprocess_class.nfold):
+            for b in [True, False]:
+                self.preprocess_class.overwrite_previous_predicts = True
+                self.preprocess_class.reset_semisupervised()
+                self.preprocess_class.previous_semisvdata = None
 
-            print("###########################################################", z)
-            print("training models to test")
-
-            simple_model_predicts = self.get_predict_probas(crossvalidation_fold=z)
-
-            _,y_test = self.preprocess_class.get_labels()
-
-            if self.classfier_weigths is None:
-                self.classfier_weigths  =np.ones(simple_model_predicts.shape[1])
-
-            print("weigths: ", np.round(self.classfier_weigths, 3))
-
-            full_weigthed_probas  = np.dot(self.classfier_weigths, simple_model_predicts)
-            weigthed_predicts = np.argmax(full_weigthed_probas, axis=1)
-            acc = np.mean(weigthed_predicts == y_test)
-            print("test accuracy: ", acc)
-            nfold_accuracies.append(acc)
-
-            prev_acc = acc
-            probas = simple_model_predicts
-            for _ in range(3):
-                self.preprocess_class.threshold= 0.5
-                self.preprocess_class.confidence_threshold = 0.15
-                probas = self.semisupervised(probas)
-                weigthed_probas = np.dot(self.classfier_weigths,probas)
-                weigthed_predicts = np.argmax(weigthed_probas, axis=1)
-                new_acc = np.mean(weigthed_predicts == y_test)
-                accuracy_change=(new_acc-prev_acc)/prev_acc
-                print ("accuracy_change: ", accuracy_change,new_acc)
-                nfold_accuracies.append(new_acc)
-                prev_acc  = new_acc
+                self.preprocess_class.overwrite_previous_predicts = b
 
 
-                full_weigthed_probas = full_weigthed_probas+weigthed_probas
+                nfold_accuracies = []
+                print("###########################################################", z)
+                print("training models to test")
 
-            weigthed_predicts = np.argmax(full_weigthed_probas, axis=1)
-            acc = np.mean(weigthed_predicts == y_test)
-            accuracies_with_averaged_seisupervised.append(acc)
+                simple_model_predicts = self.get_predict_probas(crossvalidation_fold=z)
 
+                _,y_test = self.preprocess_class.get_labels()
 
-            accuracies.append(nfold_accuracies)
+                if self.classfier_weigths is None:
+                    self.classfier_weigths  =np.ones(simple_model_predicts.shape[1])
 
+                full_weigthed_probas  = np.dot(self.classfier_weigths, simple_model_predicts)
+                weigthed_predicts = np.argmax(full_weigthed_probas, axis=1)
+                acc = np.mean(weigthed_predicts == y_test)
+                print("test accuracy: ", acc)
+                nfold_accuracies.append(acc)
 
+                prev_acc = acc
+                probas = simple_model_predicts
+                for _ in range(3):
+                    self.preprocess_class.threshold= 0.5
+                    self.preprocess_class.confidence_threshold = 0.3
+                    probas = self.semisupervised(probas)
+                    weigthed_probas = np.dot(self.classfier_weigths,probas)
+                    weigthed_predicts = np.argmax(weigthed_probas, axis=1)
+                    new_acc = np.mean(weigthed_predicts == y_test)
+                    accuracy_change=(new_acc-prev_acc)/prev_acc
+                    print ("accuracy_change: ", accuracy_change,new_acc)
+                    nfold_accuracies.append(new_acc)
+                    prev_acc  = new_acc
+
+                accuracies.append(nfold_accuracies)
+
+        cc = ['overrided', '-', '..']
         for i, nfold_accuracy in enumerate(accuracies):
-            plt.plot(nfold_accuracy)
-            print(accuracies_with_averaged_seisupervised[i])
+            l = str(i)+" "+str(cc[i%2])
+            plt.plot(nfold_accuracy, label=l, )
+
+        plt.legend()
         plt.show()
+
 
     def get_submissions(self):
         print("###########################################################")
@@ -111,11 +118,9 @@ class main_model:
         if self.classfier_weigths is None:
             self.classfier_weigths = np.ones(weigthed_probas.shape[1])
 
-        self.classfier_weigths[-1] = np.sum(self.classfier_weigths)/3  # more weigth on neuronet
-
         print("nonzero weigths: ", np.round(self.classfier_weigths, 3))
 
-        for _ in range(10):# few loops of semisupervision
+        for _ in range(3):# few loops of semisupervision
 
             weigthed_probas = self.semisupervised(weigthed_probas)
 
@@ -125,7 +130,6 @@ class main_model:
 
     def semisupervised(self, probas):
         # inputs probas, outputs probas
-        print("###########################################################", self.preprocess_class.threshold)
         print("training again with semisupervised data")
         weigthed_predicts = np.dot(self.classfier_weigths, probas)
         weigthed_predicts = weigthed_predicts / np.sum(self.classfier_weigths)  # normalize, problems if some weigth <0

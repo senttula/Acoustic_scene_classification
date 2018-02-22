@@ -16,6 +16,8 @@ class simplemodels:
     def __init__(self, preprocess_class):
         self.preprocess = preprocess_class
 
+        self.verbose = False
+
         self.is_submission = False
         # mode1 = x_train, x_test
         # mode2 = x_test,  x_train (so just reversed for some testing)
@@ -66,15 +68,17 @@ class simplemodels:
     def reset_mask(self):
         print("simple models mask reseted")
         self.classifiers_mask = [1 for i in range(len(self.classifiers))]
-        self.classifiers_mask = [0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 1., 1., 1., 1.,
-                                 1., 1., 1., 1., 1., 1., 1., 1., 1.] #TODO testing mask
         self.classifiers_mask = [0., 0., 0., 0., 0., 0., 0., 0., 0.,
                                  1., 1., 0., 1., 0.,1., 0., 0.,
                                  0., 0., 0., 0., 0., 1.]  # TODO testing mask
+        #self.classifiers_mask = [0., 0., 0., 0., 0., 0., 0., 0., 0.,
+        #                         0., 0., 0., 1., 0., 1., 0., 0.,
+        #                         0., 0., 0., 0., 0., 0.]  # TODO testing mask
 
     def all_simple_models(self):
         print ("training all simple_models")
-        print("test accuracy | train accuracy, classifier name")
+        if self.verbose:
+            print("test accuracy | train accuracy, classifier name")
         all_predicts = self.loop_classifiers()
         print("end all_simple_models")
         all_predicts = np.transpose(np.array(all_predicts), (1,0,2))
@@ -89,17 +93,19 @@ class simplemodels:
 
                 clf.fit(X_train, y_train)
                 predict_proba = clf.predict_proba(X_test)
-                if y_test is not None:#test accuracy if can
-                    predict = clf.predict(X_test)
-                    accuracy_test = accuracy_score(y_test, predict)
-                    accuracy_train = accuracy_score(y_train, clf.predict(X_train))
-                    print("%.3f | %.3f " % (accuracy_test, accuracy_train), end="")
-                    # test_by_class(predict, y_test)
-                print(name)
-                # if accuracy < 0.4:  # weak classifiers are distracting
+                if self.verbose:
+                    if y_test is not None:#test accuracy if can
+                        predict = clf.predict(X_test)
+                        accuracy_test = accuracy_score(y_test, predict)
+                        accuracy_train = accuracy_score(y_train, clf.predict(X_train))
+                        print("%.3f | %.3f " % (accuracy_test, accuracy_train), end="")
+                        # test_by_class(predict, y_test)
+                    print(name)
+                    # if accuracy < 0.4:  # weak classifiers are distracting
                 all_predicts.append(predict_proba)
             else:
-                print ("----- | ----- skipping: (", name, ")")
+                if self.verbose:
+                    print ("----- | ----- skipping: (", name, ")")
         return all_predicts
 
     def get_train_test_data(self,preprocess_mask):
@@ -112,6 +118,7 @@ class simplemodels:
             X_train, X_test = self.preprocess.features_by_frequency(preprocess_mask)
             y_train, y_test = self.preprocess.get_labels()
 
+        X_train, y_train = self.preprocess.semisupervised_data(X_train, y_train, X_test, inlcude_previous=True)
         # semisv doesn't change unless initialised
         X_train, y_train = self.preprocess.semisupervised_data(X_train, y_train, X_test)
 
