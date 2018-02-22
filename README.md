@@ -24,3 +24,6 @@ accuracy progress with new techniques:
 78% added confidence threshold to semisupervision
 
 79% looped the semisupervision more
+
+79.5% made semisupervised learning not to overwrite its previous predictions
+
