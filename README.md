@@ -17,7 +17,7 @@ accuracy progress with new techniques:
 
 72% using multiple classifiers with same weigths and data averaged by time
 
-75% added new features of data: deviation, median, min, max, skew, kurtosis for each frequency
+75% added new features of data: deviation, median, min, max, skew, kurtosis for each frequency. Kurtosis and skewness turned out to be confusers.
 
 77% added semisupervised learning
 
@@ -26,4 +26,16 @@ accuracy progress with new techniques:
 79% looped the semisupervision more
 
 79.5% made semisupervised learning not to overwrite its previous predictions
+
+80% combined with larger network by Jorma Syrjä
+
+How this could be improved: 
+
+A single convolutional network should be able to achieve close to same accuracies but best ones made were around 73%. Optimizing the size of the network would be next step, with more computational power and time.
+
+Simple features, such as mean and deviation of all frequencys, achieve decent results, but are some frequencys unnecessary and are there more features that could be calculated from audiospectrum.
+
+
+
+
 
